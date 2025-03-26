@@ -1,0 +1,35 @@
+# Build artifacts
+/build/
+/bin/
+*.o
+*.a
+*.so
+*.d
+*.elf
+*.gch
+
+# CMake files
+/CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Clang-related files
+*.clang-format
+*.clang-tidy
+
+# Testing/Coverage
+*.gcda
+*.gcno
+
+# System files
+*~
+\#*\#
+*.swp
+*.swo
+
+# User-specific files
+CMakeUserPresets.json
+
+config.conf
+config.conf
