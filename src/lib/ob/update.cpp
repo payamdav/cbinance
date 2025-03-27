@@ -26,6 +26,7 @@ Update::Update(string symbol) {
 }
 
 Update::~Update() {
+    this->close();
     std::cout << "Update: " << symbol << " destroyed" << std::endl;
 }
 

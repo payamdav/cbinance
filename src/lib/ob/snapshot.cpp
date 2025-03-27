@@ -27,6 +27,7 @@ Snapshot::Snapshot(string symbol) {
 }
 
 Snapshot::~Snapshot() {
+    this->close();
     std::cout << "Snapshot: " << symbol << " destroyed" << std::endl;
 }
 
