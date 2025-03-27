@@ -15,5 +15,6 @@ OB::~OB() {
 }
 
 void OB::build(size_t from_ts, size_t to_ts) {
-    
+    cout << "Building OB for symbol: " << symbol << endl;
+
 }
