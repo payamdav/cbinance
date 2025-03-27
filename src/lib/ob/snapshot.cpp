@@ -5,7 +5,7 @@
 #include "../config/config.hpp"
 #include "../utils/file_utils.hpp"
 #include "../utils/string_utils.hpp"
-#include "../utils/data_utils.hpp"
+
 
 
 Snapshot::Snapshot(string symbol) {
@@ -95,6 +95,23 @@ SnapshotIdx Snapshot::get_index(size_t idx) {
     SnapshotIdx snapshotidx;
     snapshot_idx.read(reinterpret_cast<char*>(&snapshotidx), SNAPSHOT_IDX_BYTES);
     return snapshotidx;
+}
+
+size_t Snapshot::get_index_gte(size_t t) {
+    size_t count = this->count();
+    size_t left = 0;
+    size_t right = count - 1;
+    size_t mid;
+    while (left < right) {
+        mid = left + (right - left) / 2;
+        SnapshotIdx snapshotidx = get_index(mid);
+        if (snapshotidx.t < t) {
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
+    }
+    return left;
 }
 
 void Snapshot::get_snapshot(const SnapshotIdx& snapshotidx, vector<double>& bp, vector<double>& bv, vector<double>& ap, vector<double>& av) {

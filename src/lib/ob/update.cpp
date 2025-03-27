@@ -5,7 +5,6 @@
 #include "../config/config.hpp"
 #include "../utils/file_utils.hpp"
 #include "../utils/string_utils.hpp"
-#include "../utils/data_utils.hpp"
 
 
 Update::Update(string symbol) {
@@ -150,6 +149,25 @@ UpdateIdx Update::get_index(size_t idx) {
     update_idx.seekg(idx * UPDATE_IDX_BYTES, std::ios::beg);
     update_idx.read((char*)&updateidx, UPDATE_IDX_BYTES);
     return updateidx;
+}
+
+size_t Update::get_index_relevant_to_snapshot(SnapshotIdx sidx, size_t start_index) {
+    size_t count = this->count();
+    size_t left = start_index;
+    size_t right = count - 1;
+    size_t mid;
+    while (left < right) {
+        mid = left + (right - left) / 2;
+        UpdateIdx uidx = this->get_index(mid);
+        if (uidx.u_id < sidx.u_id) {
+            left = mid + 1;
+        } else if (uidx.U_id > sidx.u_id) {
+            right = mid - 1;
+        } else {
+            return mid;
+        }
+    }
+    return count; // not found
 }
 
 void Update::get_update(const UpdateIdx& updateidx, vector<double>& bp, vector<double>& bv, vector<double>& ap, vector<double>& av) {

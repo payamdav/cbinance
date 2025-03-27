@@ -31,5 +31,6 @@ class Update {
 
         size_t count();
         UpdateIdx get_index(size_t idx);
+        size_t get_index_relevant_to_snapshot(SnapshotIdx sidx, size_t start_index=0);
         void get_update(const UpdateIdx& update_idx, vector<double>& bp, vector<double>& bv, vector<double>& ap, vector<double>& av);
 };
