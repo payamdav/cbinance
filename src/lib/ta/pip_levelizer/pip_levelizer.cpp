@@ -19,26 +19,40 @@ std::ostream& operator<<(std::ostream& os, const PipLevelizer& pip_levelizer) {
     return os;
 }
 
-size_t PipLevelizer::get_level(double price) {
+inline size_t PipLevelizer::get_level(const double & price) {
     for (size_t i = this->levels.size() - 1; i >= 0; i--) {
         if (price >= this->levels[i]) return i;
     }
-    return this->levels.size();
+    return 0;
 }
 
-size_t PipLevelizer::get_level_binary_search(double price) {
+inline size_t PipLevelizer::get_level_binary_search(const double & price) {
     size_t left = 0;
     size_t right = this->levels.size() - 1;
-    size_t middle;
-    while (left <= right) {
-        middle = left + (right - left) / 2;
-        if (price < this->levels[middle]) {
-            right = middle - 1;
-        } else if (price > this->levels[middle]) {
-            left = middle + 1;
+    // Handle edge cases
+    if (price < this->levels[left]) {
+        return left; // Return the first level if price is below the first level
+    }
+    if (price >= this->levels[right]) {
+        return right; // Return the last level if price is above or equal to the last level
+    }
+    // Binary search for the level
+    while (left < right) {
+        size_t mid = left + (right - left) / 2; // Prevents overflow
+        if (this->levels[mid] > price) {
+            right = mid - 1; // Move the right pointer to mid - 1 if mid level is greater than price
         } else {
-            return middle;
+            left = mid; // Move the left pointer to mid if mid level is less than or equal to price
         }
     }
-    return right;
+    // After the loop, left should be the index of the highest level that is less than or equal to the price
+    return left; // Return the level index
+}
+
+inline size_t PipLevelizer::operator () (const double & price) {
+    return this->get_level(price);
+}
+
+inline bool PipLevelizer::is_in_range(const double & price) {
+    return (price >= this->start_price && price < this->end_price);
 }
