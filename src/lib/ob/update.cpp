@@ -10,11 +10,11 @@
 Update::Update(string symbol) {
     symbol = utils::toLowerCase(symbol);
     this->symbol = symbol;
-    cout << "symbol: " << symbol << endl;
+    // cout << "symbol: " << symbol << endl;
     binary_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "update.bin";
     index_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "update.idx";
-    cout << "Binary file Path: " << binary_path << endl;
-    cout << "Index file Path: " << index_path << endl;
+    // cout << "Binary file Path: " << binary_path << endl;
+    // cout << "Index file Path: " << index_path << endl;
     if (!utils::is_file_exists(binary_path)) {
         cout << "Binary file not exists: " << binary_path << endl;
         return;
@@ -27,7 +27,7 @@ Update::Update(string symbol) {
 
 Update::~Update() {
     this->close();
-    std::cout << "Update: " << symbol << " destroyed" << std::endl;
+    // std::cout << "Update: " << symbol << " destroyed" << std::endl;
 }
 
 void Update::open() {
@@ -172,10 +172,10 @@ size_t Update::get_index_relevant_to_snapshot(SnapshotIdx sidx, size_t start_ind
 }
 
 void Update::get_update(const UpdateIdx& updateidx, vector<double>& bp, vector<double>& bv, vector<double>& ap, vector<double>& av) {
-    bp.clear();
-    bv.clear();
-    ap.clear();
-    av.clear();
+    bp.resize(updateidx.bid_size);
+    bv.resize(updateidx.bid_size);
+    ap.resize(updateidx.ask_size);
+    av.resize(updateidx.ask_size);
     update_data.seekg(updateidx.offset, std::ios::beg);
     if (updateidx.bid_size > 0) {
         update_data.read((char*)bp.data(), updateidx.bid_size * sizeof(double));

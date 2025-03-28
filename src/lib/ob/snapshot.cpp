@@ -11,11 +11,11 @@
 Snapshot::Snapshot(string symbol) {
     symbol = utils::toLowerCase(symbol);
     this->symbol = symbol;
-    cout << "symbol: " << symbol << endl;
+    // cout << "symbol: " << symbol << endl;
     binary_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "snapshot.bin";
     index_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "snapshot.idx";
-    cout << "Binary file Path: " << binary_path << endl;
-    cout << "Index file Path: " << index_path << endl;
+    // cout << "Binary file Path: " << binary_path << endl;
+    // cout << "Index file Path: " << index_path << endl;
     if (!utils::is_file_exists(binary_path)) {
         cout << "Binary file not exists: " << binary_path << endl;
         return;
@@ -28,7 +28,7 @@ Snapshot::Snapshot(string symbol) {
 
 Snapshot::~Snapshot() {
     this->close();
-    std::cout << "Snapshot: " << symbol << " destroyed" << std::endl;
+    // std::cout << "Snapshot: " << symbol << " destroyed" << std::endl;
 }
 
 size_t Snapshot::count() {
@@ -116,11 +116,11 @@ size_t Snapshot::get_index_gte(size_t t) {
 }
 
 void Snapshot::get_snapshot(const SnapshotIdx& snapshotidx, vector<double>& bp, vector<double>& bv, vector<double>& ap, vector<double>& av) {
+    bp.resize(snapshotidx.bid_size);
+    bv.resize(snapshotidx.bid_size);
+    ap.resize(snapshotidx.ask_size);
+    av.resize(snapshotidx.ask_size);
     snapshot_data.seekg(snapshotidx.offset, std::ios::beg);
-    bp.clear();
-    bv.clear();
-    ap.clear();
-    av.clear();
     snapshot_data.read(reinterpret_cast<char*>(bp.data()), snapshotidx.bid_size * sizeof(double));
     snapshot_data.read(reinterpret_cast<char*>(bv.data()), snapshotidx.bid_size * sizeof(double));
     snapshot_data.read(reinterpret_cast<char*>(ap.data()), snapshotidx.ask_size * sizeof(double));

@@ -17,8 +17,6 @@ class OB {
         vector<double> av;
         size_t scount;
         size_t ucount;
-
-        void clear_temp_vectores();
     public:
         map<double, double> bids;
         map<double, double> asks;
@@ -27,6 +25,7 @@ class OB {
         Update* update;
         size_t u_id;
         size_t t;
+        size_t idx; // current index in the order book
 
         OB(string symbol);
         ~OB();
@@ -38,5 +37,11 @@ class OB {
         void apply_price_vol();
 
         void after_update();
+        virtual void on_after_update() {
+            // This can be overridden by subclasses to perform additional actions after each update
+            // For example, logging or custom processing
+        }
+
+        void check();
 
 };
