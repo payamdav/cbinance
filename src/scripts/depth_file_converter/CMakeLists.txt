@@ -1,3 +1,0 @@
-add_executable(depth_file_converter depth_file_converter.cpp)
-
-target_link_libraries(depth_file_converter depth_file)

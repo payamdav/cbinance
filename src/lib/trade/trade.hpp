@@ -1,51 +1,39 @@
 #pragma once
+#include <vector>
+#include <iostream>
 #include <string>
-#include "../ta/pip_levelizer/pip_levelizer.hpp"
+#include <fstream>
 
-class TradeOriginal {
-public:
-    long long ts;
-    double p;
-    double v;
-    double q;
-    bool is_buyer_maker;
-    size_t l;
-
-    TradeOriginal(): ts(0), p(0), v(0), q(0), is_buyer_maker(false), l(0) {};
-    TradeOriginal(const std::string & line);
-    size_t set_level(PipLevelizer & levelizer);
-
-};
-
-class SingleTrade {
-public:
-    long long ts;
-    double v;
-    double q;
-    bool is_buyer_maker;
-
-    SingleTrade(): ts(0), v(0), q(0), is_buyer_maker(false) {};
-};
-
+using namespace std;
 
 class Trade {
-public:
-    long long ts;
-    long long ts_last;
-    double v;
-    double q;
-    double vs;
-    double vb;
-    double qs;
-    double qb;
-    size_t l; // level
-    long long duration;
-
-    Trade(): ts(0), ts_last(0), v(0), q(0), vs(0), vb(0), qs(0), qb(0), l(0), duration(0) {};
-    
-    void append_trade_original(const TradeOriginal & trade_original);
-
+    public:
+        double p;
+        double v;
+        double q;
+        size_t t;
+        bool is_buyer_maker;
 };
 
+ostream& operator<<(ostream& os, const Trade& trade);
 
-std::ostream& operator<<(std::ostream& os, const Trade& trade);
+class Trades : public vector<Trade> {
+    private:
+    public:
+        string symbol;
+        size_t count; // Number of trades in binary file
+        ifstream trade_data;
+
+        Trades(string symbol);
+        void import_from_csv(int year, int month, int day);
+        void open();
+        void close();
+
+        bool read_trade(size_t index, Trade &trade);
+        Trade read_trade(size_t index);
+        Trade read_first();
+        Trade read_last();
+        size_t search(size_t t);
+        void read_by_index(size_t start, size_t num);
+        void read_by_ts(size_t ts1, size_t ts2);
+};
