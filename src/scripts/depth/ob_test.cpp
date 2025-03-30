@@ -5,8 +5,9 @@
 // #include "../../lib/ob/snapshot.hpp"
 // #include "../../lib/ob/update.hpp"
 #include "../../lib/ob/ob.hpp"
+#include "../../lib/ob/obl_creator/obl_creator.hpp"
 #include "../../lib/ob/obtools/ob_min_max_price.hpp" // Include the OBMinMaxPrice header for the min/max price functionality
-
+#include "../../lib/utils/timer.hpp" // Include the timer utility for performance measurement
 
 using namespace std;
 
@@ -102,12 +103,18 @@ void test_min_max_price_read(int argc, char *argv[]) {
     }
 }
 
+void test_obl_creator(string symbol) {
+    utils::Timer timer(symbol + "_obl_creator_timer"); // Timer for performance measuremen
+    OBLC obl(symbol);
+    obl.build();
+    obl.update_idx.close(); // Close the index file after building
+    obl.update_data.close(); // Close the binary file after building
+    timer.checkpoint(); // Checkpoint after building the order book
+}
 
 
 int main(int argc, char *argv[]) {
-    // ob_test_2(argc, argv);
-    // test_min_max_price(argc, argv); // Call the function to test min/max price functionality
-    test_min_max_price_read(argc, argv); // Call the function to read and print min/max prices from binary files
+    test_obl_creator("btcusdt"); // Test the OBLC creator for a specific symbol
 
     return 0;
 }

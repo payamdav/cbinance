@@ -10,7 +10,7 @@
 using namespace std;
 
 class OB {
-    private:
+    protected:
         vector<double> bp;
         vector<double> bv;
         vector<double> ap;
@@ -34,7 +34,8 @@ class OB {
         bool find_sid_uid(size_t ts_to_go, size_t & sid, size_t & uid);
         void apply_snapshot(SnapshotIdx & sidx);
         void apply_update(UpdateIdx & uidx);
-        void apply_price_vol();
+        virtual void apply_price_vol_snapshot(const SnapshotIdx &); // Apply price and volume to bids and asks
+        virtual void apply_price_vol_update(const UpdateIdx &); // Apply price and volume to bids and asks
 
         void after_update();
         virtual void on_after_update() {

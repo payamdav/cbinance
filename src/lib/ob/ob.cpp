@@ -91,7 +91,7 @@ void OB::apply_snapshot(SnapshotIdx & sidx) {
     this->t = sidx.t;
     this->u_id = sidx.u_id;
     snapshot->get_snapshot(sidx, bp, bv, ap, av);
-    this->apply_price_vol();
+    this->apply_price_vol_snapshot(sidx); // Apply price and volume to bids and asks for snapshot
     after_update();
     idx++;
 }
@@ -100,12 +100,29 @@ void OB::apply_update(UpdateIdx & uidx) {
     this->t = uidx.t;
     this->u_id = uidx.u_id;
     update->get_update(uidx, bp, bv, ap, av);
-    this->apply_price_vol();
+    this->apply_price_vol_update(uidx); // Apply price and volume to bids and asks for update
     after_update();
     idx++;
 }
 
-void OB::apply_price_vol() {
+void OB::apply_price_vol_snapshot(const SnapshotIdx & sidx) {
+    for (size_t i = 0; i < bp.size(); i++) {
+        if (bv[i] == 0) {
+            bids.erase(bp[i]);
+        } else {
+            bids[bp[i]] = bv[i];
+        }
+    }
+    for (size_t i = 0; i < ap.size(); i++) {
+        if (av[i] == 0) {
+            asks.erase(ap[i]);
+        } else {
+            asks[ap[i]] = av[i];
+        }
+    }
+}
+
+void OB::apply_price_vol_update(const UpdateIdx & uidx) {
     for (size_t i = 0; i < bp.size(); i++) {
         if (bv[i] == 0) {
             bids.erase(bp[i]);
