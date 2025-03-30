@@ -2,6 +2,10 @@
 
 #include <vector>
 #include <iostream>
+#include "../../market_info/market_info.hpp"
+#include <string>
+
+using namespace std;
 
 
 class PipLevelizer {
@@ -12,6 +16,8 @@ class PipLevelizer {
         std::vector<double> levels;
 
         PipLevelizer(double start_price=10000, double end_price=150000, double percent=0.0001);
+        PipLevelizer(string symbol);
+        void build();
         size_t get_level(const double & price);
         size_t get_level_binary_search(const double & price);
         size_t operator () (const double & price);

@@ -1,5 +1,6 @@
 #include "pip_levelizer.hpp"
 #include <iostream>
+#include "../../config/config.hpp" // Include the config header for accessing configuration settings
 
 
 using namespace std;
@@ -9,7 +10,22 @@ PipLevelizer::PipLevelizer(double start_price, double end_price, double percent)
     this->start_price = start_price;
     this->end_price = end_price;
     this->percent = percent;
-    this->levels = {};
+    build(); // Build the levels based on the provided parameters
+}
+
+PipLevelizer::PipLevelizer(string symbol) {
+    MarketInfo market_info;
+    double min_price, max_price;
+    market_info.get_min_max_price(symbol, min_price, max_price); // Get the min and max prices for the symbol
+    double margin = config.get_double("pip_levelizer_margin"); // Get the margin from the configuration
+    this->start_price = min_price * (1.0 - margin); // Set the start price with a margin below the min price
+    this->end_price = max_price * (1.0 + margin); // Set the end price with a margin above the max price
+    this->percent = 0.0001; // Default percentage increment for pip levels, can be adjusted as needed
+    build(); // Build the levels based on the calculated start and end prices
+}
+
+void PipLevelizer::build() {
+    this->levels.clear(); // Clear the existing levels
     double current_price = start_price;
     while (current_price < end_price) {
         this->levels.push_back(current_price);

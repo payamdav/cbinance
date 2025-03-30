@@ -36,4 +36,10 @@ class Trades : public vector<Trade> {
         size_t search(size_t t);
         void read_by_index(size_t start, size_t num);
         void read_by_ts(size_t ts1, size_t ts2);
+
+        void set_file_cursor(size_t pos=0);
+        void next(Trade &trade);
+
+        void min_max_price_from_file_iteration(double &min_price, double &max_price);
+        void min_max_price_from_file_iteration_in_chunks(double &min_price, double &max_price);
 };

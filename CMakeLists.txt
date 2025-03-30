@@ -12,6 +12,7 @@ project(cbinance)
 
 add_subdirectory(src/lib/utils)
 add_subdirectory(src/lib/config)
+add_subdirectory(src/lib/market_info)
 add_subdirectory(src/lib/ta/pip_levelizer)
 add_subdirectory(src/lib/statistics)
 add_subdirectory(src/lib/ob/raw_files)

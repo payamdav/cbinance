@@ -201,3 +201,68 @@ void Trades::read_by_ts(size_t ts1, size_t ts2) {
     trade_data.seekg(start_index * sizeof(Trade), ios::beg); // Move to the start position
     trade_data.read(reinterpret_cast<char*>(this->data()), num * sizeof(Trade)); // Read the trades into the vector
 }
+
+
+void Trades::min_max_price_from_file_iteration(double &min_price, double &max_price) {
+    // Calculate the min and max price from the binary file
+    if (count == 0) {
+        cout << "No trades available to calculate min/max price." << endl;
+        return; // Return early if there are no trades
+    }
+    min_price = 1e10; // Initialize min_price to a high value
+    max_price = 0.0; // Initialize max_price to a low value
+    open(); // Open the binary file for reading
+    trade_data.seekg(0, ios::beg); // Move to the beginning of the file
+    Trade trade;
+    for (size_t i = 0; i < count; ++i) {
+        // Read each trade from the binary file
+        trade_data.read(reinterpret_cast<char*>(&trade), sizeof(Trade)); // Read the trade data
+        if (trade.p < min_price) {
+            min_price = trade.p; // Update min_price if current trade price is lower
+        }
+        if (trade.p > max_price) {
+            max_price = trade.p; // Update max_price if current trade price is higher
+        }
+    }
+}
+
+void Trades::min_max_price_from_file_iteration_in_chunks(double &min_price, double &max_price) {
+    // Calculate the min and max price from the binary file in chunks
+    if (count == 0) {
+        cout << "No trades available to calculate min/max price." << endl;
+        return; // Return early if there are no trades
+    }
+    min_price = 1e10; // Initialize min_price to a high value
+    max_price = 0.0; // Initialize max_price to a low value
+    open(); // Open the binary file for reading
+    size_t chunk_size = 10000; // Define the chunk size for reading trades
+    size_t readed = 0;
+    Trade trade;
+
+    while (readed < count) {
+        size_t num_to_read = std::min(chunk_size, count - readed); // Calculate number of trades to read in this chunk
+        read_by_index(readed, num_to_read); // Read the trades into the vector
+
+        for (const Trade &trade : *this) { // Iterate over the trades in the vector
+            if (trade.p < min_price) {
+                min_price = trade.p; // Update min_price if current trade price is lower
+            }
+            if (trade.p > max_price) {
+                max_price = trade.p; // Update max_price if current trade price is higher
+            }
+        }
+        readed += num_to_read; // Update the number of trades read
+    }
+
+    clear(); // Clear the vector after processing to free memory
+    
+}
+
+
+void Trades::set_file_cursor(size_t pos) {
+    trade_data.seekg(pos * sizeof(Trade), ios::beg); // Move to the specified position
+}
+
+void Trades::next(Trade &trade) {
+    trade_data.read(reinterpret_cast<char*>(&trade), sizeof(Trade)); // Read the next trade
+}
