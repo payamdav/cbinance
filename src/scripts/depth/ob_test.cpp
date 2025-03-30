@@ -8,6 +8,8 @@
 #include "../../lib/ob/obl_creator/obl_creator.hpp"
 #include "../../lib/ob/obtools/ob_min_max_price.hpp" // Include the OBMinMaxPrice header for the min/max price functionality
 #include "../../lib/utils/timer.hpp" // Include the timer utility for performance measurement
+#include "../../lib/ob/obl_creator/snapshot_converter.hpp"
+
 
 using namespace std;
 
@@ -112,9 +114,19 @@ void test_obl_creator(string symbol) {
     timer.checkpoint(); // Checkpoint after building the order book
 }
 
+void test_obl_snapshot_converter(string symbol) {
+    utils::Timer timer(symbol + "_snapshot_converter_timer"); // Timer for performance measurement
+    SnapshotConverter snapshot_converter(symbol); // Create an instance of SnapshotConverter for the given symbol
+    snapshot_converter.convert_to_level_snapshot(); // Convert the snapshots to level snapshots
+    snapshot_converter.snapshot_idx.close(); // Close the index file after conversion
+    snapshot_converter.snapshot_data.close(); // Close the binary file after conversion
+    // The conversion process is complete, and the files are closed
+    timer.checkpoint(); // Checkpoint after building the order book
+}
+
 
 int main(int argc, char *argv[]) {
-    test_obl_creator("btcusdt"); // Test the OBLC creator for a specific symbol
+    test_obl_snapshot_converter("btcusdt"); // Test the snapshot converter for a specific symbol
 
     return 0;
 }
