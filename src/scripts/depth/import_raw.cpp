@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
     }
     
     if (file_type == "snapshot") {
-        ObRawFiles ob_raw_files;
+        ob::ObRawFiles ob_raw_files;
         ob_raw_files.import_snapshot(start_id, end_id);
     }
     else if (file_type == "update") {
-        ObRawFiles ob_raw_files;
+        ob::ObRawFiles ob_raw_files;
         ob_raw_files.import_update(start_id, end_id);
     }
     else {

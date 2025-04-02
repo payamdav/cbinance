@@ -6,7 +6,7 @@
 
 
 
-OB::OB(string symbol) {
+ob::OB::OB(string symbol) {
     this->symbol = symbol;
     snapshot = new Snapshot(symbol);
     update = new Update(symbol);
@@ -24,13 +24,13 @@ OB::OB(string symbol) {
     std::cout << "OB constructor called for: " << symbol << std::endl;
 }
 
-OB::~OB() {
+ob::OB::~OB() {
     // std::cout << "OB destructor called for: " << symbol << std::endl;
     delete snapshot;
     delete update;
 }
 
-void OB::build(size_t from_ts, size_t to_ts) {
+void ob::OB::build(size_t from_ts, size_t to_ts) {
     // cout << "Building OB for symbol: " << symbol << endl;
     size_t ts_to_go = from_ts;
     size_t sid;
@@ -58,28 +58,25 @@ void OB::build(size_t from_ts, size_t to_ts) {
             }
             uidx = update->get_index(uid);
             if (uidx.pu_id != u_id) {
-                cout << "update gap detected. at uid: " << uid << " - ts: " << uidx.t << " - " << utils::get_utc_datetime_string(uidx.t) << endl;
+                cout << "update gap detected. at uid: " << uid << " - current u_id: " << u_id << " - uidx: " << uidx << endl;
                 ts_to_go = uidx.t;
                 break;
             }
             apply_update(uidx);
 
-            if (uid % 100000 == 0) {
-                timer.checkpoint();
-            }
+            // if (uid % 100000 == 0) {
+            //     timer.checkpoint();
+            // }
         }
 
     }
     
 }
 
-bool OB::find_sid_uid(size_t ts_to_go, size_t & sid, size_t & uid) {
-    // cout << "Finding sid uid for ts: " << ts_to_go << " - " << utils::get_utc_datetime_string(ts_to_go) << endl;
+bool ob::OB::find_sid_uid(size_t ts_to_go, size_t & sid, size_t & uid) {
     sid = snapshot->get_index_gte(ts_to_go);
     while(sid < scount) {
         SnapshotIdx sidx = snapshot->get_index(sid);
-        if (sidx.t < ts_to_go) break;
-        // cout << "Found snapshot at sid: " << sid << " - ts: " << sidx.t << " - " << utils::get_utc_datetime_string(sidx.t) << endl;
         uid = update->get_index_relevant_to_snapshot(sidx);
         if (uid < ucount) return true;
         sid++;
@@ -87,7 +84,7 @@ bool OB::find_sid_uid(size_t ts_to_go, size_t & sid, size_t & uid) {
     return false;
 }
 
-void OB::apply_snapshot(SnapshotIdx & sidx) {
+void ob::OB::apply_snapshot(ob::SnapshotIdx & sidx) {
     this->t = sidx.t;
     this->u_id = sidx.u_id;
     snapshot->get_snapshot(sidx, bp, bv, ap, av);
@@ -96,7 +93,7 @@ void OB::apply_snapshot(SnapshotIdx & sidx) {
     idx++;
 }
 
-void OB::apply_update(UpdateIdx & uidx) {
+void ob::OB::apply_update(ob::UpdateIdx & uidx) {
     this->t = uidx.t;
     this->u_id = uidx.u_id;
     update->get_update(uidx, bp, bv, ap, av);
@@ -105,7 +102,7 @@ void OB::apply_update(UpdateIdx & uidx) {
     idx++;
 }
 
-void OB::apply_price_vol_snapshot(const SnapshotIdx & sidx) {
+void ob::OB::apply_price_vol_snapshot(const ob::SnapshotIdx & sidx) {
     for (size_t i = 0; i < bp.size(); i++) {
         if (bv[i] == 0) {
             bids.erase(bp[i]);
@@ -122,7 +119,7 @@ void OB::apply_price_vol_snapshot(const SnapshotIdx & sidx) {
     }
 }
 
-void OB::apply_price_vol_update(const UpdateIdx & uidx) {
+void ob::OB::apply_price_vol_update(const ob::UpdateIdx & uidx) {
     for (size_t i = 0; i < bp.size(); i++) {
         if (bv[i] == 0) {
             bids.erase(bp[i]);
@@ -139,12 +136,12 @@ void OB::apply_price_vol_update(const UpdateIdx & uidx) {
     }
 }
 
-void OB::after_update() {
+void ob::OB::after_update() {
     // cout << "After update called" << endl;
     this->on_after_update(); // Call the virtual function for any additional processing
 }
 
-void OB::check() {
+void ob::OB::check() {
     double max_bids_price = 0;
     double min_bids_price = 1e9;
     double max_asks_price = 0;

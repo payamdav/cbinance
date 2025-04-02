@@ -12,7 +12,7 @@
 using namespace std;
 
 
-Symbol::Symbol(string symbol) : snapshot_last_u_id(0), update_last_u_id(0) {
+ob::Symbol::Symbol(string symbol) : snapshot_last_u_id(0), update_last_u_id(0) {
     this->symbol = utils::toLowerCase(utils::trim(symbol));
     cout << "Symbol constructor called for: " << this->symbol << endl;
     base_path = config.get_path("data_path") + "um/depth/" + this->symbol + "/";
@@ -34,7 +34,7 @@ Symbol::Symbol(string symbol) : snapshot_last_u_id(0), update_last_u_id(0) {
     cout << "Files opened for symbol: " << this->symbol << endl;
 }
 
-void Symbol::get_last_update_id() {
+void ob::Symbol::get_last_update_id() {
     // get last update id from snapshot.idx
     size_t snapshot_idx_size = utils::get_file_size(base_path + "snapshot.idx");
     if (snapshot_idx_size > 0) {
@@ -68,7 +68,7 @@ void Symbol::get_last_update_id() {
     }
 }
 
-Symbol::~Symbol() {
+ob::Symbol::~Symbol() {
     cout << "Symbol destructor called for: " << this->symbol << endl;
     if (snapshot_data.is_open()) {
         snapshot_data.close();
@@ -84,18 +84,18 @@ Symbol::~Symbol() {
     }
 }
 
-ostream& operator<<(ostream& os, const SnapshotIdx& snapshot_idx) {
+ostream& ob::operator<<(ostream& os, const ob::SnapshotIdx& snapshot_idx) {
     os << "t: " << snapshot_idx.t << ", u_id: " << snapshot_idx.u_id << ", offset: " << snapshot_idx.offset << ", size: " << snapshot_idx.size << ", bid_size: " << snapshot_idx.bid_size << ", ask_size: " << snapshot_idx.ask_size;
     return os;
 }
 
-ostream& operator<<(ostream& os, const UpdateIdx& update_idx) {
+ostream& ob::operator<<(ostream& os, const ob::UpdateIdx& update_idx) {
     os << "t: " << update_idx.t << ", U_id: " << update_idx.U_id << ", u_id: " << update_idx.u_id << ", pu_id: " << update_idx.pu_id << ", offset: " << update_idx.offset << ", size: " << update_idx.size << ", bid_size: " << update_idx.bid_size << ", ask_size: " << update_idx.ask_size;
     return os;
 }
 
 
-ObRawFiles::ObRawFiles() {
+ob::ObRawFiles::ObRawFiles() {
     // cout << "ObRawFiles constructor called" << endl;
     vector<string> symbols = config.get_csv_strings("symbols_list");
     string data_path = config.get_path("data_path");
@@ -107,7 +107,7 @@ ObRawFiles::ObRawFiles() {
     }
 }
 
-ObRawFiles::~ObRawFiles() {
+ob::ObRawFiles::~ObRawFiles() {
     // cout << "ObRawFiles destructor called" << endl;
     for (auto& pair : symbols_map) {
         delete pair.second;
@@ -116,7 +116,7 @@ ObRawFiles::~ObRawFiles() {
 }
 
 
-void ObRawFiles::import_snapshot(int file_id_from, int file_id_to) {
+void ob::ObRawFiles::import_snapshot(int file_id_from, int file_id_to) {
     if (file_id_to == -1) file_id_to = file_id_from;
     string snapshot_file;
     char* buffer = new char[200 * 1024 * 1024];
@@ -241,7 +241,7 @@ void ObRawFiles::import_snapshot(int file_id_from, int file_id_to) {
 }
 
 
-void ObRawFiles::import_update(int file_id_from, int file_id_to) {
+void ob::ObRawFiles::import_update(int file_id_from, int file_id_to) {
     if (file_id_to == -1) file_id_to = file_id_from;
     string update_file;
     char* buffer = new char[200 * 1024 * 1024];

@@ -7,6 +7,10 @@
 
 using namespace std;
 
+
+namespace ob {
+
+
 class SnapshotIdxLevel {
     public:
         size_t t; // Time of the snapshot
@@ -33,4 +37,7 @@ class SnapshotConverter {
 
         SnapshotConverter(string symbol);
         void convert_to_level_snapshot();
+};
+
+
 };

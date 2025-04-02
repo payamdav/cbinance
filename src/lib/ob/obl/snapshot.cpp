@@ -2,18 +2,18 @@
 #include <fstream>
 #include <string>
 #include "snapshot.hpp"
-#include "../config/config.hpp"
-#include "../utils/file_utils.hpp"
-#include "../utils/string_utils.hpp"
+#include "../../config/config.hpp"
+#include "../../utils/file_utils.hpp"
+#include "../../utils/string_utils.hpp"
 
 
 
-ob::Snapshot::Snapshot(string symbol) {
+obl::Snapshot::Snapshot(string symbol) {
     symbol = utils::toLowerCase(symbol);
     this->symbol = symbol;
     // cout << "symbol: " << symbol << endl;
-    binary_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "snapshot.bin";
-    index_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "snapshot.idx";
+    binary_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "snapshot_level.bin";
+    index_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "snapshot_level.idx";
     // cout << "Binary file Path: " << binary_path << endl;
     // cout << "Index file Path: " << index_path << endl;
     if (!utils::is_file_exists(binary_path)) {
@@ -26,21 +26,21 @@ ob::Snapshot::Snapshot(string symbol) {
     }
 }
 
-ob::Snapshot::~Snapshot() {
+obl::Snapshot::~Snapshot() {
     this->close();
     // std::cout << "Snapshot: " << symbol << " destroyed" << std::endl;
 }
 
-size_t ob::Snapshot::count() {
+size_t obl::Snapshot::count() {
     std::ifstream index_file(index_path, std::ios::binary | std::ios::ate);
     if (!index_file) {
         std::cerr << "Error opening index file: " << index_path << std::endl;
         return 0;
     }
-    return index_file.tellg() / SNAPSHOT_IDX_BYTES;
+    return index_file.tellg() / sizeof(SnapshotIdxLevel); // Calculate the number of entries in the index file
 }
 
-void ob::Snapshot::open() {
+void obl::Snapshot::open() {
     // open if not already open
     if (!snapshot_idx.is_open()) {
         snapshot_idx.open(index_path, std::ios::binary);
@@ -58,18 +58,18 @@ void ob::Snapshot::open() {
     }
 }
 
-void ob::Snapshot::close() {
+void obl::Snapshot::close() {
     if (snapshot_idx.is_open()) snapshot_idx.close();
     if (snapshot_data.is_open()) snapshot_data.close();
     snapshot_idx.close();
     snapshot_data.close();
 }
 
-bool ob::Snapshot::is_sorted_by_t() {
+bool obl::Snapshot::is_sorted_by_t() {
     size_t count = this->count();
     size_t prev_t = 0;
     for (size_t i = 0; i < count; i++) {
-        SnapshotIdx snapshotidx = get_index(i);
+        SnapshotIdxLevel snapshotidx = get_index(i);
         if (snapshotidx.t < prev_t) {
             return false;
         }
@@ -78,11 +78,11 @@ bool ob::Snapshot::is_sorted_by_t() {
     return true;
 }
 
-bool ob::Snapshot::is_sorted_by_u_id() {
+bool obl::Snapshot::is_sorted_by_u_id() {
     size_t count = this->count();
     size_t prev_u_id = 0;
     for (size_t i = 0; i < count; i++) {
-        SnapshotIdx snapshotidx = get_index(i);
+        SnapshotIdxLevel snapshotidx = get_index(i);
         if (snapshotidx.u_id < prev_u_id) {
             return false;
         }
@@ -91,21 +91,21 @@ bool ob::Snapshot::is_sorted_by_u_id() {
     return true;
 }
 
-ob::SnapshotIdx ob::Snapshot::get_index(size_t idx) {
-    snapshot_idx.seekg(idx * SNAPSHOT_IDX_BYTES, std::ios::beg);
-    SnapshotIdx snapshotidx;
-    snapshot_idx.read(reinterpret_cast<char*>(&snapshotidx), SNAPSHOT_IDX_BYTES);
+obl::SnapshotIdxLevel obl::Snapshot::get_index(size_t idx) {
+    snapshot_idx.seekg(idx * sizeof(SnapshotIdxLevel), std::ios::beg);
+    SnapshotIdxLevel snapshotidx;
+    snapshot_idx.read(reinterpret_cast<char*>(&snapshotidx), sizeof(SnapshotIdxLevel)); // Read the index entry from the file
     return snapshotidx;
 }
 
-size_t ob::Snapshot::get_index_gte(size_t t) {
+size_t obl::Snapshot::get_index_gte(size_t t) {
     size_t count = this->count();
     size_t left = 0;
     size_t right = count - 1;
     size_t mid;
     while (left < right - 1) {
         mid = left + (right - left) / 2;
-        SnapshotIdx snapshotidx = get_index(mid);
+        SnapshotIdxLevel snapshotidx = get_index(mid);
         if (snapshotidx.t < t) {
             left = mid + 1;
         } else {
@@ -113,7 +113,7 @@ size_t ob::Snapshot::get_index_gte(size_t t) {
         }
     }
     for (mid = left; mid <= right; mid++) {
-        SnapshotIdx snapshotidx = get_index(mid);
+        SnapshotIdxLevel snapshotidx = get_index(mid);
         if (snapshotidx.t >= t) {
             return mid;
         }
@@ -121,14 +121,19 @@ size_t ob::Snapshot::get_index_gte(size_t t) {
     return count;
 }
 
-void ob::Snapshot::get_snapshot(const ob::SnapshotIdx& snapshotidx, vector<double>& bp, vector<double>& bv, vector<double>& ap, vector<double>& av) {
-    bp.resize(snapshotidx.bid_size);
-    bv.resize(snapshotidx.bid_size);
-    ap.resize(snapshotidx.ask_size);
-    av.resize(snapshotidx.ask_size);
+void obl::Snapshot::get_snapshot(const SnapshotIdxLevel& snapshotidx, vector<double>& b, vector<double>& a) {
+    b.resize(snapshotidx.last_bid_level - snapshotidx.first_bid_level + 1 );
+    a.resize(snapshotidx.last_ask_level - snapshotidx.first_ask_level + 1 );
     snapshot_data.seekg(snapshotidx.offset, std::ios::beg);
-    snapshot_data.read(reinterpret_cast<char*>(bp.data()), snapshotidx.bid_size * sizeof(double));
-    snapshot_data.read(reinterpret_cast<char*>(bv.data()), snapshotidx.bid_size * sizeof(double));
-    snapshot_data.read(reinterpret_cast<char*>(ap.data()), snapshotidx.ask_size * sizeof(double));
-    snapshot_data.read(reinterpret_cast<char*>(av.data()), snapshotidx.ask_size * sizeof(double));
+    snapshot_data.read(reinterpret_cast<char*>(b.data()), b.size() * sizeof(double));
+    snapshot_data.read(reinterpret_cast<char*>(a.data()), a.size() * sizeof(double));
+}
+
+std::ostream& obl::operator<<(std::ostream& os, const obl::SnapshotIdxLevel& snapshot_idx) {
+    os << "Time: " << snapshot_idx.t << ", Unique ID: " << snapshot_idx.u_id
+       << ", First Bid Level: " << snapshot_idx.first_bid_level
+       << ", Last Bid Level: " << snapshot_idx.last_bid_level
+       << ", First Ask Level: " << snapshot_idx.first_ask_level
+       << ", Last Ask Level: " << snapshot_idx.last_ask_level;
+    return os;
 }

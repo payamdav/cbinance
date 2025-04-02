@@ -8,6 +8,8 @@
 
 using namespace std;
 
+namespace ob {
+
 const size_t SNAPSHOT_IDX_BYTES = 48;
 const size_t UPDATE_IDX_BYTES = 64;
 
@@ -68,5 +70,8 @@ class ObRawFiles {
         unordered_map<string, Symbol*> symbols_map;
         string snapshot_raw_path;
         string update_raw_path;
+
+};
+
 
 };

@@ -8,7 +8,7 @@
 using namespace std;
 
 
-OBLC::OBLC(string symbol) : OB(symbol), levelizer(symbol) {
+ob::OBLC::OBLC(string symbol) : ob::OB(symbol), levelizer(symbol) {
     string updates_level_index_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "update_level.idx";
     string updates_level_binary_path = config.get_path("data_path") + "um/depth/" + symbol + "/" + "update_level.bin";
     // open files for appending
@@ -16,7 +16,47 @@ OBLC::OBLC(string symbol) : OB(symbol), levelizer(symbol) {
     update_data.open(updates_level_binary_path, std::ios::binary | std::ios::app);
 }
 
-void OBLC::apply_price_vol_update(const UpdateIdx & uidx) {
+void ob::OBLC::build(size_t from_ts, size_t to_ts) {
+    // cout << "Building OB for symbol: " << symbol << endl;
+    size_t ts_to_go = from_ts;
+    size_t sid;
+    size_t uid;
+
+    while (ts_to_go < to_ts) {
+        if (!find_sid_uid(ts_to_go, sid, uid)) {
+            // cout << "No snapshot with relevant update found for ts: " << ts_to_go << endl;
+            return;
+        }
+        bids.clear();
+        asks.clear();
+
+        SnapshotIdx sidx = snapshot->get_index(sid);
+        apply_snapshot(sidx);
+        UpdateIdx uidx = update->get_index(uid);
+        apply_update(uidx);
+
+        while(true) {
+            uid++;
+            if (uid >= ucount) {
+                // cout << "No more updates to apply for ts: " << ts_to_go << endl;
+                return;
+            }
+            uidx = update->get_index(uid);
+            if (uidx.pu_id != u_id) {
+                cout << "update gap detected. at uid: " << uid << " - current u_id: " << u_id << " - uidx: " << uidx << endl;
+                write_diff_to_file(uidx);
+                ts_to_go = uidx.t;
+                break;
+            }
+            apply_update(uidx);
+
+        }
+
+    }
+    
+}
+
+void ob::OBLC::apply_price_vol_update(const ob::UpdateIdx & uidx) {
     double current_vol = 0;
     double delta;
     size_t l;
@@ -71,7 +111,7 @@ void OBLC::apply_price_vol_update(const UpdateIdx & uidx) {
 }
 
 
-void OBLC::write_diff_to_file(const UpdateIdx & uidxin) {
+void ob::OBLC::write_diff_to_file(const ob::UpdateIdx & uidxin) {
     UpdateIdx uidx = uidxin; // Copy the input UpdateIdx to a local variable for processing
     uidx.bid_size = diff_bids.size(); // Set the bid size in the UpdateIdx based on the diff_bids map
     uidx.ask_size = diff_asks.size(); // Set the ask size in the UpdateIdx based on the diff_asks map
@@ -89,4 +129,15 @@ void OBLC::write_diff_to_file(const UpdateIdx & uidxin) {
         update_data.write((char*)&pair.first, sizeof(size_t)); // Write the level (size_t) for the ask
         update_data.write((char*)&pair.second, sizeof(double)); // Write the volume (double) for the ask
     }
+}
+
+void ob::OBLC::write_gap_update_to_file(const ob::UpdateIdx & uidxin) {
+    UpdateIdx uidx = uidxin; // Copy the input UpdateIdx to a local variable for processing
+    uidx.bid_size = 0; // Set the bid size in the UpdateIdx to 0 for gap updates
+    uidx.ask_size = 0; // Set the ask size in the UpdateIdx to 0 for gap updates
+    uidx.size = 0; // Set the size of the update to 0 for gap updates
+    uidx.offset = update_data.tellp(); // Get the current position in the update data file for the offset
+    // Write the UpdateIdx to the index file
+    update_idx.write((char*)&uidx, sizeof(UpdateIdx)); // Write the UpdateIdx structure to the index file
+    // Write the differences for bids to the update data file
 }

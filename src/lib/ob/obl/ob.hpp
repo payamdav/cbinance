@@ -3,26 +3,21 @@
 #include "update.hpp"
 #include <string>
 #include <vector>
-#include <map>
 #include <iostream>
-
+#include "../../ta/pip_levelizer/pip_levelizer.hpp"
 
 using namespace std;
 
-namespace ob {
 
+namespace obl {
 
 class OB {
     protected:
-        vector<double> bp;
-        vector<double> bv;
-        vector<double> ap;
-        vector<double> av;
         size_t scount;
         size_t ucount;
     public:
-        map<double, double> bids;
-        map<double, double> asks;
+        vector<double> bids;
+        vector<double> asks;
         string symbol;
         Snapshot* snapshot;
         Update* update;
@@ -30,15 +25,15 @@ class OB {
         size_t t;
         size_t idx; // current index in the order book
 
+        size_t fb, lb, fa, la; // first and last levels for bids and asks
+
         OB(string symbol);
         ~OB();
 
-        virtual void build(size_t from_ts=0, size_t to_ts=2000000000000);
+        void build(size_t from_ts=0, size_t to_ts=2000000000000);
         bool find_sid_uid(size_t ts_to_go, size_t & sid, size_t & uid);
-        void apply_snapshot(SnapshotIdx & sidx);
+        void apply_snapshot(SnapshotIdxLevel & sidx);
         void apply_update(UpdateIdx & uidx);
-        virtual void apply_price_vol_snapshot(const SnapshotIdx &); // Apply price and volume to bids and asks
-        virtual void apply_price_vol_update(const UpdateIdx &); // Apply price and volume to bids and asks
 
         void after_update();
         virtual void on_after_update() {
@@ -46,9 +41,6 @@ class OB {
             // For example, logging or custom processing
         }
 
-        void check();
-
 };
-
 
 };

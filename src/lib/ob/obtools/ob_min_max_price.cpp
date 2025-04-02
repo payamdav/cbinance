@@ -8,12 +8,12 @@
 
 using namespace std;
 
-OBMinMaxPrice::OBMinMaxPrice(string symbol) : OB(symbol) {
+ob::OBMinMaxPrice::OBMinMaxPrice(string symbol) : ob::OB(symbol) {
     min_price = 1e9; // Set initial min price to a very high value
     max_price = 0;   // Set initial max price to a very low value
 }
 
-void OBMinMaxPrice::on_after_update() {
+void ob::OBMinMaxPrice::on_after_update() {
     double best_bid = bids.rbegin()->first; // Get the best bid price
     double best_ask = asks.begin()->first; // Get the best ask price
     if (best_bid < min_price) {
@@ -24,7 +24,7 @@ void OBMinMaxPrice::on_after_update() {
     }
 }
 
-void OBMinMaxPrice::save_min_max_price() {
+void ob::OBMinMaxPrice::save_min_max_price() {
     string file_path = config.get_path("data_path") + "um/depth/" + utils::toLowerCase(symbol) + "/" + "symbol_info.bin";
     ofstream file(file_path, ios::binary | ios::trunc);
     if (!file) {
@@ -45,7 +45,7 @@ void OBMinMaxPrice::save_min_max_price() {
     // cout << "Current Max Price: " << max_price << endl;
 }
 
-bool read_min_max_price(string symbol, double &min_price, double &max_price) {
+bool ob::read_min_max_price(string symbol, double &min_price, double &max_price) {
     string file_path = config.get_path("data_path") + "um/depth/" + utils::toLowerCase(symbol) + "/" + "symbol_info.bin";
     ifstream file(file_path, ios::binary);
     if (!file) {

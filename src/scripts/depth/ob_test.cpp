@@ -18,15 +18,15 @@ using namespace std;
 void ob_test_1(int argc, char *argv[]) {
     // auto symbols = config.get_csv_strings("symbols_list");
     // OB ob("btcusdt");
-    OB ob("adausdt");
+    ob::OB ob("adausdt");
     // ob.build(1742319330205);
     ob.build();
     ob.check(); // This will check the order book for any inconsistencies or issues
 }
 
-class MyOB : public OB {
+class MyOB : public ob::OB {
     public:
-        MyOB(string symbol) : OB(symbol) {}
+        MyOB(string symbol) : ob::OB(symbol) {}
         size_t count_negative_spreads = 0; // Count of negative spreads
         double max_spread = 0; // Maximum spread observed
         double min_spread = 1e9; // Minimum spread observed
@@ -80,7 +80,7 @@ void test_min_max_price(int argc, char *argv[]) {
     auto symbols = config.get_csv_strings("symbols_list");
     for (const auto& symbol : symbols) {
         // Create an instance of OBMinMaxPrice for each symbol
-        OBMinMaxPrice ob(symbol);
+        ob::OBMinMaxPrice ob(symbol);
         // Build the order book for the symbol
         ob.build();
         // Check for any inconsistencies or issues in the order book
@@ -94,7 +94,7 @@ void test_min_max_price_read(int argc, char *argv[]) {
     auto symbols = config.get_csv_strings("symbols_list");
     double min_price, max_price; // Variables to hold min and max prices
     for (const auto& symbol : symbols) {
-        bool res = read_min_max_price(symbol, min_price, max_price); // Read the min and max prices from the binary file
+        bool res = ob::read_min_max_price(symbol, min_price, max_price); // Read the min and max prices from the binary file
         if (res) {
             // If reading was successful, print the min and max prices
             cout << "Symbol: " << symbol << ", Min Price: " << min_price << ", Max Price: " << max_price << endl;
@@ -105,28 +105,8 @@ void test_min_max_price_read(int argc, char *argv[]) {
     }
 }
 
-void test_obl_creator(string symbol) {
-    utils::Timer timer(symbol + "_obl_creator_timer"); // Timer for performance measuremen
-    OBLC obl(symbol);
-    obl.build();
-    obl.update_idx.close(); // Close the index file after building
-    obl.update_data.close(); // Close the binary file after building
-    timer.checkpoint(); // Checkpoint after building the order book
-}
-
-void test_obl_snapshot_converter(string symbol) {
-    utils::Timer timer(symbol + "_snapshot_converter_timer"); // Timer for performance measurement
-    SnapshotConverter snapshot_converter(symbol); // Create an instance of SnapshotConverter for the given symbol
-    snapshot_converter.convert_to_level_snapshot(); // Convert the snapshots to level snapshots
-    snapshot_converter.snapshot_idx.close(); // Close the index file after conversion
-    snapshot_converter.snapshot_data.close(); // Close the binary file after conversion
-    // The conversion process is complete, and the files are closed
-    timer.checkpoint(); // Checkpoint after building the order book
-}
-
-
 int main(int argc, char *argv[]) {
-    test_obl_snapshot_converter("btcusdt"); // Test the snapshot converter for a specific symbol
+    // test_obl_snapshot_converter("btcusdt"); // Test the snapshot converter for a specific symbol
 
     return 0;
 }

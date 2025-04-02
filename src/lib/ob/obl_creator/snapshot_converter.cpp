@@ -13,7 +13,7 @@
 
 
 
-SnapshotConverter::SnapshotConverter(string symbol) : snapshot(symbol), levelizer(symbol) {
+ob::SnapshotConverter::SnapshotConverter(string symbol) : snapshot(symbol), levelizer(symbol) {
     symbol = utils::toLowerCase(symbol); // Ensure symbol is lowercase
     this->symbol = symbol;
     snapshot.open(); // Open the snapshot files to read
@@ -23,7 +23,7 @@ SnapshotConverter::SnapshotConverter(string symbol) : snapshot(symbol), levelize
     b.resize(levelizer.levels.size()); // Initialize bid vector with zeros for each level
 }
 
-void SnapshotConverter::convert_to_level_snapshot() {
+void ob::SnapshotConverter::convert_to_level_snapshot() {
     size_t count = snapshot.count();
     if (count == 0) {
         std::cerr << "No snapshots to convert for symbol: " << symbol << std::endl;

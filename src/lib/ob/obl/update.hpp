@@ -1,14 +1,28 @@
 #pragma once
-#include "raw_files/ob_raw_files.hpp"
 #include <string>
 #include <vector>
 #include "snapshot.hpp"
-
+#include <unordered_map>
+#include <fstream>
+#include <iostream>
 
 using namespace std;
 
-namespace ob {
+namespace obl {
 
+class UpdateIdx {
+    public:
+        size_t t;
+        size_t U_id;
+        size_t u_id;
+        size_t pu_id;
+        size_t offset;
+        size_t size;
+        size_t bid_size;
+        size_t ask_size;
+};
+
+ostream& operator<<(ostream& os, const UpdateIdx& update_idx);
 
 class Update {
     public:
@@ -33,8 +47,8 @@ class Update {
 
         size_t count();
         UpdateIdx get_index(size_t idx);
-        size_t get_index_relevant_to_snapshot(SnapshotIdx sidx, size_t start_index=0);
-        void get_update(const UpdateIdx& update_idx, vector<double>& bp, vector<double>& bv, vector<double>& ap, vector<double>& av);
+        size_t get_index_relevant_to_snapshot(SnapshotIdxLevel sidx, size_t start_index=0);
+        void get_update(const UpdateIdx& update_idx, unordered_map<size_t, double>& b, unordered_map<size_t, double>& a);
 };
 
 

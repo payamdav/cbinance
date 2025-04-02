@@ -28,11 +28,11 @@ void snapshot_test(int argc, char *argv[]) {
         idx = stoi(argv[2]);
     }
 
-    Snapshot snapshot(symbol);
+    ob::Snapshot snapshot(symbol);
     snapshot.open();
     cout << "Snapshot count: " << snapshot.count() << endl;
     cout << "Snapshot index: " << idx << endl;
-    SnapshotIdx snapshot_idx = snapshot.get_index(idx);
+    ob::SnapshotIdx snapshot_idx = snapshot.get_index(idx);
     cout << "Snapshot index: " << snapshot_idx << endl;
 
     // print horizontal line
@@ -69,11 +69,11 @@ void update_test(int argc, char *argv[]) {
         idx = stoi(argv[2]);
     }
 
-    Update update(symbol);
+    ob::Update update(symbol);
     update.open();
     cout << "Update count: " << update.count() << endl;
     cout << "Update index: " << idx << endl;
-    UpdateIdx updateidx = update.get_index(idx);
+    ob::UpdateIdx updateidx = update.get_index(idx);
     cout << "Update index: " << updateidx << endl;
 
     // print horizontal line
@@ -94,7 +94,7 @@ void update_test(int argc, char *argv[]) {
 void check_snapshots(int argc, char *argv[]) {
     auto symbols = config.get_csv_strings("symbols_list");
     for (auto symbol : symbols) {
-        Snapshot snapshot(symbol);
+        ob::Snapshot snapshot(symbol);
         snapshot.open();
         cout << "Snapshot count: " << snapshot.count() << endl;
         cout << "Is sorted by t: " << snapshot.is_sorted_by_t() << endl;
@@ -107,7 +107,7 @@ void check_snapshots(int argc, char *argv[]) {
 void check_updates(int argc, char *argv[]) {
     auto symbols = config.get_csv_strings("symbols_list");
     for (auto symbol : symbols) {
-        Update update(symbol);
+        ob::Update update(symbol);
         update.open();
         cout << "Update count: " << update.count() << endl;
         // cout << "Is sorted by t: " << update.is_sorted_by_t() << endl;

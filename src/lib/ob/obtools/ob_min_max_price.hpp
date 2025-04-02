@@ -1,6 +1,9 @@
 #pragma once
 #include "../ob.hpp"
 
+namespace ob {
+
+    
 class OBMinMaxPrice : public OB {
     public:
         double min_price;
@@ -14,3 +17,6 @@ class OBMinMaxPrice : public OB {
 
 
 bool read_min_max_price(string symbol, double &min_price, double &max_price);
+
+
+};
