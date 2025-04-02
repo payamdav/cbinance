@@ -41,15 +41,14 @@ void ob::SnapshotConverter::convert_to_level_snapshot() {
 
         // Aggregate volumes at each level
         for (size_t j = 0; j < bp.size(); j++) {
-            size_t level = levelizer.is_in_range(bp[j]) ? levelizer.get_level(bp[j]) : 0;
-            if (level != 0) {
-                b[level] += bv[j];
+            if (levelizer.is_in_range(bp[j])) {
+                b[levelizer.get_level(bp[j])] += bv[j];
             }
         }
+
         for (size_t j = 0; j < ap.size(); j++) {
-            size_t level = levelizer.is_in_range(ap[j]) ? levelizer.get_level(ap[j]) : 0;
-            if (level != 0) {
-                a[level] += av[j];
+            if (levelizer.is_in_range(ap[j])) {
+                a[levelizer.get_level(ap[j])] += av[j];
             }
         }
 
