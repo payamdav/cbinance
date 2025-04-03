@@ -6,7 +6,7 @@
 #include <algorithm> // For std::fill
 #include <cstdlib>
 
-double eps = 0.00000001;
+double eps = 0.000000001;
 
 obl::OB::OB(string symbol) {
     this->symbol = symbol;
@@ -124,26 +124,24 @@ void obl::OB::apply_update(obl::UpdateIdx & uidx) {
     // Apply price and volume to bids and asks for update
     for (const auto& pair : b) {
         bids[pair.first] += pair.second; // Update the bids based on the update data
-        if (bids[pair.first] < eps && bids[pair.first] > -eps) {
+        if (bids[pair.first] < eps && bids[pair.first] > -eps && bids[pair.first] != 0) {
+            // cout << "Found eps at bid level: " << pair.first << " : " << bids[pair.first] << endl; // Debugging line
             bids[pair.first] = 0; // Ensure bids are non-negative
         }
         else if (bids[pair.first] < -eps) {
-            if (true) {
-                cout << "Negative bid volume detected at level: " << pair.first << " - Volume: " << bids[pair.first] << endl;
-                exit(1); // Exit if negative volume is detected
-            }
+            cout << "Negative bid volume detected at level: " << pair.first << " - Volume: " << bids[pair.first] << endl;
+            exit(1); // Exit if negative volume is detected
         }
     }
     for (const auto& pair : a) {
         asks[pair.first] += pair.second; // Update the asks based on the update data
-        if (asks[pair.first] < eps && asks[pair.first] > -eps) {
+        if (asks[pair.first] < eps && asks[pair.first] > -eps && asks[pair.first] != 0) {
+            // cout << "Found eps at ask level: " << pair.first << " : " << asks[pair.first] << endl; // Debugging line
             asks[pair.first] = 0; // Ensure asks are non-negative
         }
         else if (asks[pair.first] < -eps) {
-            if (true) {
-                cout << "Negative ask volume detected at level: " << pair.first << " - Volume: " << asks[pair.first] << endl;
-                exit(1); // Exit if negative volume is detected
-            }
+            cout << "Negative ask volume detected at level: " << pair.first << " - Volume: " << asks[pair.first] << endl;
+            exit(1); // Exit if negative volume is detected
         }
     }
     // set fb, lb, fa, la

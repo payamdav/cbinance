@@ -122,11 +122,11 @@ void ob_obl_check(string symbol) {
 // }
 
 int main(int argc, char *argv[]) {
-    vector<string> symbols = config.get_csv_strings("symbols_list");
-    for (const auto& symbol : symbols) {
-        ob_obl_check(symbol);
-    }
-    // ob_obl_check("vineusdt");
+    // vector<string> symbols = config.get_csv_strings("symbols_list");
+    // for (const auto& symbol : symbols) {
+    //     ob_obl_check(symbol);
+    // }
+    ob_obl_check("ethusdt");
 
     return 0;
 }

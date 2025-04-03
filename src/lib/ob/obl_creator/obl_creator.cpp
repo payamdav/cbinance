@@ -44,7 +44,7 @@ void ob::OBLC::build(size_t from_ts, size_t to_ts) {
             uidx = update->get_index(uid);
             if (uidx.pu_id != u_id) {
                 cout << "update gap detected. at uid: " << uid << " - current u_id: " << u_id << " - uidx: " << uidx << endl;
-                write_diff_to_file(uidx);
+                write_gap_update_to_file(uidx);
                 ts_to_go = uidx.t;
                 break;
             }
