@@ -3,6 +3,7 @@
 #include <vector>
 #include "../../lib/config/config.hpp"
 #include "../../lib/ob/obl_creator/obl_creator.hpp"
+#include "../../lib/ob/obl_creator/obl_builder.hpp" // Include the OBLB class for building the order book
 #include "../../lib/utils/timer.hpp" // Include the timer utility for performance measurement
 #include "../../lib/ob/obl_creator/snapshot_converter.hpp"
 
@@ -29,9 +30,18 @@ void obl_snapshot_converter(string symbol) {
     timer.checkpoint(); // Checkpoint after building the order book
 }
 
+void obl_build(string symbol) {
+    utils::Timer timer(symbol + "_obl_builder_timer"); // Timer for performance measurement
+    ob::OBLB obl(symbol); // Create an instance of OBLB for the given symbol
+    obl.build(); // Build the order book
+    obl.obl_idx.close(); // Close the index file after building
+    obl.obl_data.close(); // Close the binary file after building
+    timer.checkpoint(); // Checkpoint after building the order book
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << "updates or snapshots" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " build or updates or snapshots" << std::endl;
         return 1;
     }
 
@@ -44,8 +54,12 @@ int main(int argc, char *argv[]) {
         for (const auto& symbol : symbols) {
             obl_snapshot_converter(symbol);
         }
+    } else if (std::string(argv[1]) == "build") {
+        for (const auto& symbol : symbols) {
+            obl_build(symbol);
+        }
     } else {
-        std::cerr << "Invalid argument. Use 'updates' or 'snapshots'." << std::endl;
+        std::cerr << "Invalid argument. Use 'build' or 'updates' or 'snapshots'." << std::endl;
         return 1;
     }
 
