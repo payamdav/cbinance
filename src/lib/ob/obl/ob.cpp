@@ -6,7 +6,7 @@
 #include <algorithm> // For std::fill
 #include <cstdlib>
 
-double eps = 0.000000001;
+double eps = 0.00000001;
 
 obl::OB::OB(string symbol) {
     this->symbol = symbol;

@@ -11,4 +11,4 @@ add_executable(ob_test ob_test.cpp)
 target_link_libraries(ob_test ob config obtools obl_creator)
 
 add_executable(obl_test obl_test.cpp)
-target_link_libraries(obl_test ob obl config)
+target_link_libraries(obl_test ob obl config obl_creator)

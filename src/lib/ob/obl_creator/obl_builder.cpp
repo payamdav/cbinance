@@ -109,7 +109,7 @@ void ob::OBLB::apply_price_vol_update(const ob::UpdateIdx & uidx) {
     // Write update to obl_idx and obl_data
     
     // only write update if its ts is greater than the last full timestamp
-    if (uidx.t <= last_full_ts) {
+    if (false && uidx.t <= last_full_ts) {
         cout << "Skipping write for update with ts: " << uidx.t 
              << " as it is not greater than the last full timestamp: " 
              << last_full_ts << endl;

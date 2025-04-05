@@ -6,8 +6,11 @@
 // #include "../../lib/ob/obl/update.hpp"
 #include "../../lib/ob/ob.hpp"
 #include "../../lib/ob/obl/ob.hpp"
+#include "../../lib/ob/obl/obl.hpp"
+#include "../../lib/ob/obl_creator/obl_builder.hpp"
 #include "../../lib/utils/timer.hpp" // Include the timer utility for performance measurement
-
+#include <cstdlib> // For exit function
+#include <cmath>
 
 using namespace std;
 
@@ -39,6 +42,66 @@ void ob_obl_check(string symbol) {
     cout << "-------------------------" << endl;
 
 }
+
+class OBLChecker : public obl::OB {
+    public:
+        obl::OBL * obl_instance;
+        OBLChecker(string symbol) : obl::OB(symbol) {
+            // Initialize the OBL instance for this checker
+            obl_instance = new obl::OBL(symbol);
+            obl_instance->init(); // Initialize the OBL instance, this will set up the order book
+        }
+
+        ~OBLChecker() {
+            if (obl_instance) {
+                delete obl_instance; // Clean up the OBL instance
+            }
+        }
+
+        void on_after_update() override {
+            if (this->t != obl_instance->t) {
+                // If the timestamps do not match, print a warning
+                std::cerr << "Timestamp mismatch: OB t = " << this->t << ", OBL t = " << obl_instance->t << " - at index: " << obl_instance->idx << std::endl;
+                // exit(1); // Exit the program to avoid further inconsistencies
+                obl_instance->next(); // Move to the next record in the OBL instance to try and sync
+                cout << "Attempting to sync to next OBL record with ts: " << obl_instance->t << " at index: " << obl_instance->idx << endl;
+            }
+
+            for (size_t i = 0; i < bids.size(); i++) {
+                if (abs(bids[i] - obl_instance->bids[i]) > obl::eps) {
+                    // If the bid prices do not match, print a warning
+                    std::cerr << "Bid price mismatch at level " << i << ": OB bids[" << i << "] = " << bids[i] << ", OBL bids[" << i << "] = " << obl_instance->bids[i] << " at index: " << obl_instance->idx << endl;
+                    exit(1); // Exit to avoid further inconsistencies
+                }
+                if (abs(asks[i] - obl_instance->asks[i]) > obl::eps) {
+                    // If the ask prices do not match, print a warning
+                    std::cerr << "Ask price mismatch at level " << i << ": OB asks[" << i << "] = " << asks[i] << ", OBL asks[" << i << "] = " << obl_instance->asks[i] << " at index: " << obl_instance->idx << endl;
+                    exit(1); // Exit to avoid further inconsistencies
+                }
+
+            }
+
+            if (!obl_instance->ended()) {
+                // If the OBL instance has not ended, move to the next record
+                obl_instance->next(); // Move to the next record in the OBL instance
+            } else {
+                cout << "Finished processing all OBL records." << endl;
+            }
+        }
+
+};
+
+
+
+void obl_build(string symbol) {
+    utils::Timer timer(symbol + "_obl_builder_timer"); // Timer for performance measurement
+    ob::OBLB obl(symbol); // Create an instance of OBLB for the given symbol
+    obl.build(); // Build the order book
+    obl.obl_idx.close(); // Close the index file after building
+    obl.obl_data.close(); // Close the binary file after building
+    timer.checkpoint(); // Checkpoint after building the order book
+}
+
 
 // class MyOB : public OB {
 //     public:
@@ -124,9 +187,16 @@ void ob_obl_check(string symbol) {
 int main(int argc, char *argv[]) {
     // vector<string> symbols = config.get_csv_strings("symbols_list");
     // for (const auto& symbol : symbols) {
-    //     ob_obl_check(symbol);
+    //     OBLChecker obl_checker(symbol); // Create an instance of the OBLChecker for a specific symbol
+    //     obl_checker.build(); // Build the order book using the OBLChecker
     // }
-    ob_obl_check("ethusdt");
 
+    // obl_build("vineusdt"); // Build the order book for a specific symbol, e.g., "vineusdt"
+
+
+
+
+    OBLChecker obl_checker("vineusdt"); // Create an instance of the OBLChecker for a specific symbol
+    obl_checker.build(); // Build the order book using the OBLChecker
     return 0;
-}
+};
