@@ -25,6 +25,7 @@ add_subdirectory(src/lib/trade)
 # add_subdirectory(src/lib/binance_candles)
 add_subdirectory(src/scripts/depth)
 add_subdirectory(src/scripts/trades)
+add_subdirectory(src/scripts/chart_data)
 
 add_executable(cbinance main.cpp)
 # target_link_libraries(cbinance )

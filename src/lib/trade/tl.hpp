@@ -42,6 +42,8 @@ class TLS : public vector<TL> {
         size_t search(size_t t);
         void read_by_index(size_t start, size_t num);
         void read_by_ts(size_t ts1, size_t ts2);
+        TL first_tl();
+        TL last_tl();
 
         void add_trade(const Trade& trade, size_t l); // Add a trade to the appropriate TL based on the level
         void import_trades(Trades& trades);

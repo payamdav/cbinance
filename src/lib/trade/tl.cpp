@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../utils/string_utils.hpp"
 #include "../utils/file_utils.hpp"
+#include "../utils/datetime_utils.hpp"
 #include "../config/config.hpp" // Include config for path settings
 #include <fstream> // Include fstream for file operations
 
@@ -32,8 +33,8 @@ void TL::add_trade(const Trade& trade) {
 
 ostream& operator<<(ostream& os, const TL& tl) {
     // Overload the << operator to print TL objects
-    os << "TL(t: " << tl.t 
-       << ", t_end: " << tl.t_end 
+    os << "TL(t: " << tl.t << " (" << utils::get_utc_datetime_string(tl.t) << ")"
+       << ", t_end: " << tl.t_end << " (" << utils::get_utc_datetime_string(tl.t_end) << ")"
        << ", n: " << tl.n 
        << ", l: " << tl.l 
        << ", v: " << tl.v 
@@ -125,7 +126,7 @@ void TLS::next(TL &tl) {
 }
 
 bool TLS::read(size_t index, TL &tl) {
-    if (index >= this->size()) return false; // Return false if the index is out of bounds
+    if (index >= this->count) return false; // Return false if the index is out of bounds
     tl_data.seekg(index * sizeof(TL), ios::beg); // Move to the correct position in the file
     tl_data.read(reinterpret_cast<char*>(&tl), sizeof(TL)); // Read the TL data
     return true; // Return true if the TL was successfully read
@@ -133,29 +134,36 @@ bool TLS::read(size_t index, TL &tl) {
 
 size_t TLS::search(size_t t) {
     size_t left = 0; // Start of the search range
-    size_t right = this->size(); // End of the search range
+    size_t right = this->count; // End of the search range
     size_t mid = 0; // Middle index for binary search
     TL mid_tl;
-    while (left < right) {
+    while (left < right - 1) {
         mid = left + (right - left) / 2; // Calculate the middle index
         read(mid, mid_tl); // Read the TL at the middle index
-        if (mid_tl.t < t) {
+        if (mid_tl.t_end < t) {
             left = mid + 1; // Search in the right half
         } else {
             right = mid; // Search in the left half
         }
     }
-    return left; // Return the index of the first TL with t >= t
+    for (mid = left; mid <= right; ++mid) { // Ensure we check the last TL in the range
+        if (read(mid, mid_tl)) { // Read the TL at index mid
+            if (mid_tl.t_end >= t) { // Check if the end timestamp of the TL is greater than or equal to t
+                return mid; // Return the index of the first TL with t_end >= t
+            }
+        }
+    }
+    return count;
 }
 
 void TLS::read_by_index(size_t start, size_t num) {
     clear(); // Clear the current TLS
-    if (start >= this->size()) {
+    if (start >= this->count) {
         cout << "Error: Start index is out of range." << endl; // Handle out of range error
         return; // Return early if start index is out of range
     }
-    if (start + num > this->size()) {
-        num = this->size() - start; // Adjust num to read only available TLs
+    if (start + num > this->count) {
+        num = this->count - start; // Adjust num to read only available TLs
     }
     resize(num); // Resize the vector to hold the number of TLs to read
     tl_data.seekg(start * sizeof(TL), ios::beg); // Move to the start position in the file
@@ -172,8 +180,9 @@ void TLS::read_by_ts(size_t ts1, size_t ts2) {
     TL tl;
     size_t index = search(ts1); // Find the starting index for ts1
     size_t end_index = this->search(ts2); // Find the ending index for ts2 (exclusive)
-    size_t num = end_index - index; // Calculate the number of TLs to read
-    if (num == 0) {
+    size_t num = end_index - index + 1; // Calculate the number of TLs to read
+    // cout << "Reading TLs from index " << index << " to " << end_index << " (total: " << num << ")" << endl; // Debug output for the range being read
+    if (num <= 0) {
         cout << "No TLs found in the specified timestamp range." << endl; // Handle case where no TLs are found
         return; // Return early if no TLs are found
     }
@@ -182,3 +191,18 @@ void TLS::read_by_ts(size_t ts1, size_t ts2) {
     resize(num); // Resize the vector to hold the number of TLs to read
     tl_data.read(reinterpret_cast<char*>(this->data()), num * sizeof(TL)); // Read the TLs into the vector
 }
+
+TL TLS::first_tl() {
+    TL tl;
+    this->set_file_cursor(0); // Set cursor to the start
+    this->next(tl); // Read the first TL
+    return tl; // Return the first TL
+}
+
+TL TLS::last_tl() {
+    TL tl;
+    this->set_file_cursor(count - 1); // Set cursor to the last TL
+    this->next(tl); // Read the last TL
+    return tl; // Return the last TL
+}
+
