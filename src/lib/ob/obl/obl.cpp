@@ -135,10 +135,7 @@ void obl::OBL::apply_obl_rec(obl::OBLRec &rec) {
 }
 
 bool obl::OBL::ended() {
-    if (idx >= ucount-1) {
-        return true; // All records have been processed
-    }
-    return false; // There are still records to process
+    return (idx >= ucount - 1);
 }
 
 obl::OBL * obl::OBL::next() {

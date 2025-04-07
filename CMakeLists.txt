@@ -21,6 +21,8 @@ add_subdirectory(src/lib/ob/obtools)
 add_subdirectory(src/lib/ob/obl_creator)
 add_subdirectory(src/lib/ob/obl)
 add_subdirectory(src/lib/trade)
+add_subdirectory(src/lib/ob/obl_ext/obl_instant) # Must be after obl, as it links to it
+add_subdirectory(src/lib/ob/obl_ext/obl_sum_up_sum_prev) # Must be after obl, as it links to it
 # add_subdirectory(src/lib/ta/volume_profiler)
 # add_subdirectory(src/lib/binance_candles)
 add_subdirectory(src/scripts/depth)
