@@ -28,6 +28,7 @@ add_subdirectory(src/lib/ob/obl_ext/obl_sum_up_sum_prev) # Must be after obl, as
 add_subdirectory(src/scripts/depth)
 add_subdirectory(src/scripts/trades)
 add_subdirectory(src/scripts/chart_data)
+add_subdirectory(src/scripts/tests)
 
 add_executable(cbinance main.cpp)
 # target_link_libraries(cbinance )

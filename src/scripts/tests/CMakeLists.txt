@@ -1,0 +1,2 @@
+add_executable(obl_instant_test obl_instant_test.cpp)
+target_link_libraries(obl_instant_test obl utils obl_instant)
