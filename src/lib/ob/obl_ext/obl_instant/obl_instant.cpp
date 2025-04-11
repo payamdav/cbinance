@@ -2,6 +2,10 @@
 #include <iostream>
 #include "../../../config/config.hpp"
 #include <fstream>
+#include <cmath>
+#include <map>
+#include "../../../ta/vols/vols.hpp"
+#include "../../../binance_candles/binance_candles.hpp"
 
 
 const double eps = 0.00000001;
@@ -106,4 +110,169 @@ void obl_cache_to_file(string symbol, size_t ts1, size_t ts2, string file_name, 
 
 
 
+}
+
+vector<OBL_INSTANT_REC> obl_cache(string symbol, size_t ts1, size_t ts2, size_t level_count) {
+    vector<OBL_INSTANT_REC> records;
+
+    obl::OBL obl(symbol);
+    obl.init(ts1);
+    while(obl.t < ts1) {
+        obl.next();
+    }
+
+    while(!obl.ended() && obl.t <= ts2) {
+        OBL_INSTANT_REC rec;
+        rec.t = obl.t;
+        rec.bids_start_level = obl.lb;
+        rec.asks_start_level = obl.fa;
+        for (size_t i = obl.lb; i > obl.lb - level_count; i--) {
+            double b = i < obl.bids.size() ? obl.bids[i] : 0;
+            rec.bids.push_back(b);
+        }
+        for (size_t i = obl.fa; i < obl.fa + level_count; i++) {
+            double a = i < obl.asks.size() ? obl.asks[i] : 0;
+            rec.asks.push_back(a);
+        }
+        records.push_back(rec);
+        obl.next();
+    }
+    return records;
+}
+
+
+vector<OBL_INSTANT_SCORE_REC> obl_cache_score(vector<OBL_INSTANT_REC> & records) {
+    vector<OBL_INSTANT_SCORE_REC> rs;
+
+    size_t count = 0;
+    size_t count_bids = 0;
+    size_t count_asks = 0;
+    double sum_bids = 0;
+    double sum_asks = 0;
+    double avg_bids = 0;
+    double avg_asks = 0;
+    double std_bids = 0;
+    double std_asks = 0;
+
+    for (auto & rec : records) {
+        count++;
+        for (auto & b : rec.bids) {
+            if (b > eps) {
+                count_bids++;
+                sum_bids += b;
+            }
+        }
+        for (auto & a : rec.asks) {
+            if (a > eps) {
+                count_asks++;
+                sum_asks += a;
+            }
+        }
+    }
+
+    if (count_bids > 0) avg_bids = sum_bids / count_bids;
+    if (count_asks > 0) avg_asks = sum_asks / count_asks;
+
+    // calculate std
+
+    for (auto & rec : records) {
+        for (auto & b : rec.bids) {
+            if (b > eps) {
+                std_bids += pow(b - avg_bids, 2);
+            }
+        }
+        for (auto & a : rec.asks) {
+            if (a > eps) {
+                std_asks += pow(a - avg_asks, 2);
+            }
+        }
+    }
+
+    if (count_bids > 0) std_bids = sqrt(std_bids / count_bids);
+    if (count_asks > 0) std_asks = sqrt(std_asks / count_asks);
+
+    double score_factor_bids = std_bids / 1;
+    double score_factor_asks = std_asks / 1;
+
+    // building result with z-scores
+    for (auto & rec : records) {
+        OBL_INSTANT_SCORE_REC r;
+        r.t = rec.t;
+        r.bids_start_level = rec.bids_start_level;
+        r.asks_start_level = rec.asks_start_level;
+        for (auto & b : rec.bids) {
+            r.bids.push_back(round((b - avg_bids) / score_factor_bids));
+        }
+        for (auto & a : rec.asks) {
+            r.asks.push_back(round((a - avg_asks) / score_factor_asks));
+        }
+        rs.push_back(r);
+    }
+
+    map<int, int> bid_hist;
+    map<int, int> ask_hist;
+    for (auto & rec : rs) {
+        for (auto & b : rec.bids) {
+            if (bid_hist.find(b) == bid_hist.end()) {
+                bid_hist[b] = 1;
+            }
+            else {
+                bid_hist[b]++;
+            }
+        }
+        for (auto & a : rec.asks) {
+            if (ask_hist.find(a) == ask_hist.end()) {
+                ask_hist[a] = 1;
+            }
+            else {
+                ask_hist[a]++;
+            }
+        }
+    }
+
+    cout << "Bid histogram:" << endl;
+    for (auto & b : bid_hist) {
+        cout << b.first << ": " << b.second << endl;
+    }
+    cout << "Ask histogram:" << endl;
+    for (auto & a : ask_hist) {
+        cout << a.first << ": " << a.second << endl;
+    }
+
+
+    return rs;
+}
+
+
+vector<OBL_INSTANT_REC> obl_cache_ratio_to_vols(string symbol, size_t ts1, size_t ts2, size_t level_count, size_t vols_n) {
+    vector<OBL_INSTANT_REC> records = obl_cache(symbol, ts1, ts2, level_count);
+    BinanceCandles candles(symbol, ts1 - ((vols_n + 10) * 60000), ts2 + 60000); // get candles for 10 minutes before and after
+    Vols vols(candles, vols_n);
+
+    obl::OBL obl(symbol);
+    obl.init(ts1);
+    while(obl.t < ts1) {
+        obl.next();
+    }
+
+    while(!obl.ended() && obl.t <= ts2) {
+        OBL_INSTANT_REC rec;
+        vols.forward_search_le(obl.t);
+        rec.t = obl.t;
+        rec.bids_start_level = obl.lb;
+        rec.asks_start_level = obl.fa;
+        for (size_t i = obl.lb; i > obl.lb - level_count; i--) {
+            double b = i < obl.bids.size() ? obl.bids[i] / vols.s[vols.idx] : 0;
+            rec.bids.push_back(b);
+        }
+        for (size_t i = obl.fa; i < obl.fa + level_count; i++) {
+            double a = i < obl.asks.size() ? obl.asks[i] / vols.b[vols.idx] : 0;
+            rec.asks.push_back(a);
+        }
+        records.push_back(rec);
+        obl.next();
+    }
+
+
+    return records;
 }

@@ -1,10 +1,11 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <iostream>
-#include <format>
-#include "../config/config.hpp"
 #include "../ta/pip_levelizer/pip_levelizer.hpp"
+#include <iostream>
+
+
+using namespace std;
 
 
 class BinanceCandle {
@@ -25,28 +26,28 @@ class BinanceCandle {
         size_t ll;
         size_t cl;
 
-        void print();
-        bool from_str(std::string str);
-        void set_level(PipLevelizer & levelizer);
+        BinanceCandle(string str, PipLevelizer * levelizer=nullptr);
+
+        // bool from_str(std::string str);
+        // void set_level(PipLevelizer & levelizer);
         void merge(BinanceCandle & candle);
 };
+
+ostream & operator<<(ostream & os, const BinanceCandle & candle);
 
 
 class BinanceCandles : public std::vector<BinanceCandle> {
     public:
-        void load_candles_csv(std::vector<std::string> csv_files);
-        void set_levels(PipLevelizer & levelizer);
+        string symbol;
+
+        BinanceCandles(string symbol, size_t ts1=0, size_t ts2=0, PipLevelizer * levelizer=nullptr);
+        void load_candles_csv(string csv_file ,PipLevelizer * levelizer=nullptr);
+        // void set_levels(PipLevelizer & levelizer);
         bool is_sorted();
-        int get_candles_interval();
+        int get_candles_interval() const;
         bool is_any_gap();
         BinanceCandles resample(int multiplier);
 
 };
 
-class BinanceCandlesFeeder : public BinanceCandles {
-    public:
-        BinanceCandlesFeeder();
-        BinanceCandlesFeeder(BinanceCandles & candles);
-        size_t last_feed_index;
-        BinanceCandles feed_upto(long long ts);
-};
+ostream & operator<<(ostream & os, const BinanceCandles & candles);

@@ -46,4 +46,15 @@ string get_utc_datetime_string(long long ts) {
 }
 
 
+vector<YearMonthDay> get_year_month_days(long long start_ts, long long end_ts) {
+    vector<YearMonthDay> result;
+    // loop from start of day of start_ts to end_ts - with one day step (in milliseconds)
+    for (long long ts = start_ts - (start_ts % 86400000); ts <= end_ts; ts += 86400000) {
+        time_t t = ts / 1000;
+        struct tm *tm = gmtime(&t);
+        result.push_back({tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday});
+    }
+    return result;
+}
+
 }

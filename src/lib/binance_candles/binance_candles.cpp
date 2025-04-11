@@ -4,28 +4,31 @@
 #include <string>
 #include <vector>
 #include <format>
+#include "../utils/datetime_utils.hpp"
+#include "../utils/string_utils.hpp"
+#include "../config/config.hpp"
 
-void BinanceCandle::print() {
-    std::cout << std::format("ts: {}, ts_close: {}, o: {}, h: {}, l: {}, c: {}, v: {}, qv: {}, vb: {}, vs: {}, n: {}, ol: {}, hl: {}, ll: {}, cl: {}", ts, ts_close, o, h, l, c, v, qv, vb, vs, n, ol, hl, ll, cl) << std::endl;
-}
 
-bool BinanceCandle::from_str(std::string str) {
+using namespace std;
+
+// BinanceCandle
+
+BinanceCandle::BinanceCandle(string str, PipLevelizer * levelizer) {
     int result = sscanf(str.c_str(), "%lld,%lf,%lf,%lf,%lf,%lf,%lld,%lf,%ld,%lf,%*f,%*d", &ts, &o, &h, &l, &c, &v, &ts_close, &qv, &n, &vb);
     if (result != 10) {
         std::cout << "Error parsing candle: " << str << std::endl;
-        return false;
+        ts = 0;
     }
     vs = v - vb;
     ol = hl = ll = cl = 0;
-    return true;
+    if (levelizer) {
+        ol = (*levelizer)(o);
+        hl = (*levelizer)(h);
+        ll = (*levelizer)(l);
+        cl = (*levelizer)(c);
+    }
 }
 
-void BinanceCandle::set_level(PipLevelizer & levelizer) {
-    ol = levelizer.get_level(o);
-    hl = levelizer.get_level(h);
-    ll = levelizer.get_level(l);
-    cl = levelizer.get_level(c);
-}
 
 void BinanceCandle::merge(BinanceCandle & candle) {
     if (candle.ts <= ts) {
@@ -46,28 +49,36 @@ void BinanceCandle::merge(BinanceCandle & candle) {
     if (candle.ll < ll) ll = candle.ll;
 }
 
+ostream & operator<<(ostream & os, const BinanceCandle & candle) {
+    os << format("ts: {}, ts_close: {}, o: {}, h: {}, l: {}, c: {}, v: {}, qv: {}, vb: {}, vs: {}, n: {}, ol: {}, hl: {}, ll: {}, cl: {}",
+        candle.ts, candle.ts_close, candle.o, candle.h, candle.l, candle.c, candle.v, candle.qv, candle.vb, candle.vs, candle.n, candle.ol, candle.hl, candle.ll, candle.cl);
+    return os;
+}
+
 
 // BinanceCandles
 
-void BinanceCandles::load_candles_csv(std::vector<std::string> csv_files) {
-    for (auto csv_file : csv_files) {
-        std::cout << "Loading " << csv_file << std::endl;
-        std::ifstream file(csv_file);
-        std::string line;
-        // ignor the first line
-        // std::getline(file, line);
-        while (std::getline(file, line)) {
-            BinanceCandle candle;
-            if (candle.from_str(line)) this->push_back(candle);
+BinanceCandles::BinanceCandles(string symbol, size_t ts1, size_t ts2, PipLevelizer * levelizer) : symbol(utils::toLowerCase(symbol)) {
+    if (ts1 != 0 && ts2 != 0) {
+        string base_path = config.get_path("data_path") + "um/candles/" + utils::toUpperCase(symbol) + "-1m-";
+        auto year_month_days = utils::get_year_month_days(ts1, ts2);
+        for (auto & ymd : year_month_days) {
+            string csv_file = base_path + to_string(ymd.year) + "-" + utils::lpad(to_string(ymd.month), '0', 2) + "-" + utils::lpad(to_string(ymd.day), '0', 2) + ".csv";
+            load_candles_csv(csv_file, levelizer);
         }
-        file.close();
     }
 }
 
-void BinanceCandles::set_levels(PipLevelizer & levelizer) {
-    for (auto & candle : *this) {
-        candle.set_level(levelizer);
-    }
+void BinanceCandles::load_candles_csv(string csv_file, PipLevelizer * levelizer) {
+        cout << "Loading " << csv_file << endl;
+        ifstream file(csv_file);
+        string line;
+        while (getline(file, line)) {
+            if (line[0] == '1') {
+                this->emplace_back(line, levelizer);
+                if (back().ts == 0) this->pop_back();
+            }            
+        }
 }
 
 bool BinanceCandles::is_sorted() {
@@ -79,7 +90,7 @@ bool BinanceCandles::is_sorted() {
     return true;
 }
 
-int BinanceCandles::get_candles_interval() {
+int BinanceCandles::get_candles_interval() const {
     if (this->size() < 2) {
         return 0;
     }
@@ -97,7 +108,7 @@ bool BinanceCandles::is_any_gap() {
 }
 
 BinanceCandles BinanceCandles::resample(int multiplier) {
-    BinanceCandles resampled;
+    BinanceCandles resampled(symbol);
     for (size_t i = 0; i < this->size(); i++) {
         if (i % multiplier == 0) {
             // copy the candle and push it to resampled
@@ -115,29 +126,7 @@ BinanceCandles BinanceCandles::resample(int multiplier) {
     return resampled;
 }
 
-
-// BinanceCandlesFeeder
-
-BinanceCandlesFeeder::BinanceCandlesFeeder() {
-    last_feed_index = -1;
-}
-
-BinanceCandlesFeeder::BinanceCandlesFeeder(BinanceCandles & candles) {
-    for (auto & candle : candles) {
-        this->push_back(candle);
-    }
-    last_feed_index = -1;
-}
-
-BinanceCandles BinanceCandlesFeeder::feed_upto(long long ts) {
-    BinanceCandles candles;
-    for (size_t i = last_feed_index + 1; i < this->size(); i++) {
-        if ((*this)[i].ts <= ts) {
-            candles.push_back((*this)[i]);
-            last_feed_index = i;
-        } else {
-            break;
-        }
-    }
-    return candles;
+ostream & operator<<(ostream & os, const BinanceCandles & candles) {
+    os << format("symbol: {}, size: {}, interval: {}", candles.symbol, candles.size(), candles.get_candles_interval());
+    return os;
 }
