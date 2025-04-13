@@ -245,7 +245,7 @@ vector<OBL_INSTANT_SCORE_REC> obl_cache_score(vector<OBL_INSTANT_REC> & records)
 
 
 vector<OBL_INSTANT_REC> obl_cache_ratio_to_vols(string symbol, size_t ts1, size_t ts2, size_t level_count, size_t vols_n) {
-    vector<OBL_INSTANT_REC> records = obl_cache(symbol, ts1, ts2, level_count);
+    vector<OBL_INSTANT_REC> records;
     BinanceCandles candles(symbol, ts1 - ((vols_n + 10) * 60000), ts2 + 60000); // get candles for 10 minutes before and after
     Vols vols(candles, vols_n);
 
@@ -275,4 +275,81 @@ vector<OBL_INSTANT_REC> obl_cache_ratio_to_vols(string symbol, size_t ts1, size_
 
 
     return records;
+}
+
+
+vector<OBL_INSTANT_AVG_REC> obl_cache_ratio_to_vols_avg(string symbol, size_t ts1, size_t ts2, size_t level_count, size_t vols_n, string file_name) {
+    vector<OBL_INSTANT_AVG_REC> records;
+    BinanceCandles candles(symbol, ts1 - ((vols_n + 10) * 60000), ts2 + 60000); // get candles for 10 minutes before and after
+    Vols vols(candles, vols_n);
+
+    obl::OBL obl(symbol);
+    obl.init(ts1);
+    while(obl.t < ts1) {
+        obl.next();
+    }
+
+    while(!obl.ended() && obl.t <= ts2) {
+        OBL_INSTANT_AVG_REC rec;
+        vols.forward_search_le(obl.t);
+        rec.t = obl.t;
+        rec.b = 0;
+        rec.a = 0;
+        for (size_t i = obl.lb; i > obl.lb - level_count; i--) {
+            double b = i < obl.bids.size() ? obl.bids[i] / vols.s[vols.idx] : 0;
+            rec.b += b;
+        }
+        rec.b /= level_count;
+        for (size_t i = obl.fa; i < obl.fa + level_count; i++) {
+            double a = i < obl.asks.size() ? obl.asks[i] / vols.b[vols.idx] : 0;
+            rec.a += a;
+        }
+        rec.a /= level_count;
+        records.push_back(rec);
+        obl.next();
+    }
+
+    if (file_name != "") {
+        ofstream file(config.get_path("data_path") + "files/" + file_name, ios::binary);
+        file.write(reinterpret_cast<const char*>(records.data()), sizeof(OBL_INSTANT_AVG_REC) * records.size());
+    }
+    return records;
+}
+
+
+void obl_limited_snapshots_to_file(string symbol, size_t ts1, size_t ts2, size_t l1, size_t l2, size_t interval, string file_name) {
+    obl::OBL obl(symbol);
+    obl.init(ts1);
+    while(obl.t < ts1) {
+        obl.next();
+    }
+
+    size_t count = 0;
+    size_t count_levels = l2 - l1 + 1;
+    size_t last_ts = 0;
+
+    ofstream file(config.get_path("data_path") + "files/" + file_name, ios::binary);
+    // file structure -> count(size_t), l1(size_t), l2(size_t), records: ts(size_t), count_levels * bids(double), count_levels * asks(double)
+    file.write(reinterpret_cast<const char*>(&count), sizeof(size_t));
+    file.write(reinterpret_cast<const char*>(&l1), sizeof(size_t));
+    file.write(reinterpret_cast<const char*>(&l2), sizeof(size_t));
+
+    while(!obl.ended() && obl.t <= ts2) {
+        if (obl.t - last_ts >= interval) {
+            file.write(reinterpret_cast<const char*>(&obl.t), sizeof(size_t));
+            for (size_t i = l1; i <= l2; i++) {
+                file.write(reinterpret_cast<const char*>(&obl.bids[i]), sizeof(double));
+            }
+            for (size_t i = l1; i <= l2; i++) {
+                file.write(reinterpret_cast<const char*>(&obl.asks[i]), sizeof(double));
+            }
+            count++;
+            last_ts = obl.t;
+        }
+        obl.next();
+    }
+    file.seekp(0, ios::beg);
+    file.write(reinterpret_cast<const char*>(&count), sizeof(size_t));
+    file.close();
+
 }

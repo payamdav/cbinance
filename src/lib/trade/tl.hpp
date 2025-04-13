@@ -33,20 +33,23 @@ class TLS : public vector<TL> {
 
 
         TLS(string symbol);
-        void open();
-        void close();
+        TLS * open();
+        TLS * close();
         void set_file_cursor(size_t pos=0);
-        void next(TL &tl);
+        TLS * next(TL &tl);
 
         bool read(size_t index, TL &tl);
         size_t search(size_t t);
-        void read_by_index(size_t start, size_t num);
-        void read_by_ts(size_t ts1, size_t ts2);
+        TLS * read_by_index(size_t start, size_t num);
+        TLS * read_by_ts(size_t ts1, size_t ts2);
         TL first_tl();
         TL last_tl();
+        TLS * min_max_level(size_t &min_level, size_t &max_level);
 
         void add_trade(const Trade& trade, size_t l); // Add a trade to the appropriate TL based on the level
         void import_trades(Trades& trades);
         void save();
+        TLS * save(const std::string & filename);
+        TLS * save_lite(const std::string & filename);
 };
 

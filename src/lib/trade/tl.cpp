@@ -94,35 +94,41 @@ void TLS::save() {
     ofs.close(); // Close the file after writing
 }
 
-void TLS::open() {
-    if (tl_data.is_open()) {
-        // cout << "TL data file already open for symbol: " << symbol << endl; // Handle case where file is already open
-        return; // Return if the file is already open
-    }
-    string filename = config.get_path("data_path") + "um/trades/" + symbol + "_levels.bin"; // Define the file path for opening
-    tl_data.open(filename, ios::in | ios::binary); // Open the binary file for reading
-    if (!tl_data.is_open()) {
-        cout << "Error: Could not open TL data file: " << filename << endl; // Handle case where file cannot be opened
-        return; // Return early if the file cannot be opened
-    }
-    // Successfully opened the file
-    // cout << "Successfully opened TL data file: " << filename << endl; // Success message
+TLS * TLS::save(const std::string & filename) {
+    string file_path = config.get_path("data_path") + "files/" + filename; // Define the file path for saving
+    ofstream ofs(file_path, ios::binary); // Open the file for writing in binary mode
+    ofs.write(reinterpret_cast<const char*>(this->data()), this->size() * sizeof(TL)); // Write the binary data of the TLS to the file
+    return this; // Return the TLS object
 }
 
-void TLS::close() {
-    if (tl_data.is_open()) {
-        tl_data.close(); // Close the file if it's open
-    } else {
-        cout << "TL data file for symbol: " << symbol << " is not open." << endl; // Handle case where file is not open
+TLS * TLS::save_lite(const std::string & filename) {
+    string file_path = config.get_path("data_path") + "files/" + filename; // Define the file path for saving
+    ofstream ofs(file_path, ios::binary); // Open the file for writing in binary mode
+    for (const TL & tl : *this) {
+        ofs.write(reinterpret_cast<const char*>(&tl.t), sizeof(size_t)); // Write the start timestamp
+        ofs.write(reinterpret_cast<const char*>(&tl.l), sizeof(size_t)); // Write the level
     }
+    return this; // Return the TLS object
+}
+
+TLS * TLS::open() {
+    string filename = config.get_path("data_path") + "um/trades/" + symbol + "_levels.bin"; // Define the file path for opening
+    tl_data.open(filename, ios::in | ios::binary); // Open the binary file for reading
+    return this; // Return early if the file cannot be opened
+}
+
+TLS * TLS::close() {
+    tl_data.close(); // Close the file if it's open
+    return this; // Return the TLS object
 }
 
 void TLS::set_file_cursor(size_t pos) {
     tl_data.seekg(pos * sizeof(TL), ios::beg); // Move to the specified position in the file
 }
 
-void TLS::next(TL &tl) {
+TLS * TLS::next(TL &tl) {
     tl_data.read(reinterpret_cast<char*>(&tl), sizeof(TL)); // Read the next TL from the binary file
+    return this; // Return the TLS object
 }
 
 bool TLS::read(size_t index, TL &tl) {
@@ -156,11 +162,11 @@ size_t TLS::search(size_t t) {
     return count;
 }
 
-void TLS::read_by_index(size_t start, size_t num) {
+TLS * TLS::read_by_index(size_t start, size_t num) {
     clear(); // Clear the current TLS
     if (start >= this->count) {
         cout << "Error: Start index is out of range." << endl; // Handle out of range error
-        return; // Return early if start index is out of range
+        return this; // Return early if start index is out of range
     }
     if (start + num > this->count) {
         num = this->count - start; // Adjust num to read only available TLs
@@ -168,14 +174,15 @@ void TLS::read_by_index(size_t start, size_t num) {
     resize(num); // Resize the vector to hold the number of TLs to read
     tl_data.seekg(start * sizeof(TL), ios::beg); // Move to the start position in the file
     tl_data.read(reinterpret_cast<char*>(this->data()), num * sizeof(TL)); // Read the TLs into the vector
+    return this;
 }
 
 
-void TLS::read_by_ts(size_t ts1, size_t ts2) {
+TLS * TLS::read_by_ts(size_t ts1, size_t ts2) {
     clear(); // Clear the current TLS
     if (ts1 >= ts2) {
         cout << "Error: ts1 must be less than ts2." << endl; // Handle invalid timestamp range
-        return; // Return early if the timestamp range is invalid
+        return this; // Return early if the timestamp range is invalid
     }
     TL tl;
     size_t index = search(ts1); // Find the starting index for ts1
@@ -184,12 +191,13 @@ void TLS::read_by_ts(size_t ts1, size_t ts2) {
     // cout << "Reading TLs from index " << index << " to " << end_index << " (total: " << num << ")" << endl; // Debug output for the range being read
     if (num <= 0) {
         cout << "No TLs found in the specified timestamp range." << endl; // Handle case where no TLs are found
-        return; // Return early if no TLs are found
+        return this; // Return early if no TLs are found
     }
     // Read the TLs from the binary file within the specified timestamp range
     tl_data.seekg(index * sizeof(TL), ios::beg); // Move to the starting position in the file
     resize(num); // Resize the vector to hold the number of TLs to read
     tl_data.read(reinterpret_cast<char*>(this->data()), num * sizeof(TL)); // Read the TLs into the vector
+    return this;
 }
 
 TL TLS::first_tl() {
@@ -206,3 +214,12 @@ TL TLS::last_tl() {
     return tl; // Return the last TL
 }
 
+TLS * TLS::min_max_level(size_t &min_level, size_t &max_level) {
+    min_level = begin()->l;
+    max_level = begin()->l;
+    for (const TL & tl : *this) {
+        if (tl.l < min_level) min_level = tl.l; // Update minimum level
+        if (tl.l > max_level) max_level = tl.l; // Update maximum level
+    }
+    return this; // Return the TLS object
+}

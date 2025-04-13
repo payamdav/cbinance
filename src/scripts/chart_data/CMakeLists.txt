@@ -1,2 +1,8 @@
 add_executable(chart_trade chart_trade.cpp)
 target_link_libraries(chart_trade trade config pip_levelizer utils market_info)
+
+add_executable(trade_obl_avg_prepare trade_obl_avg_prepare.cpp)
+target_link_libraries(trade_obl_avg_prepare trade config utils obl_instant zigzag)
+
+add_executable(trade_obl_snapshot_prepare trade_obl_snapshot_prepare.cpp)
+target_link_libraries(trade_obl_snapshot_prepare trade config utils obl_instant zigzag)

@@ -1,4 +1,9 @@
 #include "basic_statistics.hpp"
+#include <cmath>
+#include <algorithm>
+#include <ranges>
+#include <fstream>
+#include "../config/config.hpp"
 
 
 vector<double> i2d(const vector<int>& data) {
@@ -75,3 +80,29 @@ vector<double> quantiles(const vector<double>& data, int q) {
     return quantiles;
 }
 
+pair<vector<int>, vector<double>> histogram(const vector<double>& data, int bins_number, string filename) {
+    double min = *ranges::min_element(data);
+    double max = *ranges::max_element(data);
+    double bin_size = (max - min) / bins_number;
+    vector<int> bins(bins_number, 0);
+    vector<double> bin_edges(bins_number);
+    for (double d : data) {
+        int bin_index = (d - min) / bin_size;
+        if (bin_index >= 0 && bin_index < bins_number) {
+            bins[bin_index]++;
+        }
+    }
+    for (int i = 0; i < bins_number; i++) {
+        bin_edges[i] = min + i * bin_size;
+    }
+
+    if (!filename.empty()) {
+        ofstream file(config.get_path("data_path") + "files/" + filename);
+        for (int i = 0; i < bins_number; i++) {
+            file << bin_edges[i] << "," << bins[i] << endl;
+        }
+    }
+
+
+    return make_pair(bins, bin_edges);
+}

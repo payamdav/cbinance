@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
-#include <cmath>
-#include <algorithm>
+#include <utility>
+#include <string>
 
 
 using namespace std;
@@ -16,3 +16,5 @@ double max(const vector<double>& data);
 double min(const vector<double>& data);
 double range(const vector<double>& data);
 vector<double> quantiles(const vector<double>& data, int q);
+pair<vector<int>, vector<double>> histogram(const vector<double>& data, int bins_number, string filename="");
+
