@@ -5,6 +5,8 @@
 #include "../../lib/binance_candles/binance_candles.hpp"
 #include "../../lib/ta/pip_levelizer/pip_levelizer.hpp"
 #include "../../lib/ta/vols/vols.hpp"
+#include "../../lib/config/config.hpp"
+
 
 using namespace std;
 
@@ -31,8 +33,42 @@ void candles_test() {
 
 }
 
+void candles_volume_report(string symbol) {
+    size_t ts1 = utils::get_timestamp("2025-03-10 00:00:00");
+    size_t ts2 = utils::get_timestamp("2025-03-30 23:59:59");
+
+    PipLevelizer levelizer(symbol);
+
+    BinanceCandles candles(symbol, ts1, ts2, &levelizer);
+    cout << candles << endl;
+
+    double volume_sum = 0;
+    double volume_buy_sum = 0;
+    double volume_sell_sum = 0;
+    size_t count = 0;
+
+    for (BinanceCandle &candle : candles) {
+        volume_sum += candle.v;
+        volume_buy_sum += candle.vb;
+        volume_sell_sum += candle.vs;
+        count++;
+    }
+
+    volume_sum /= count;
+    volume_buy_sum /= count;
+    volume_sell_sum /= count;
+
+    cout << "Average Volume: " << volume_sum << endl;
+    cout << "Average Buy Volume: " << volume_buy_sum << endl;
+    cout << "Average Sell Volume: " << volume_sell_sum << endl;
+    cout << "Total Candles Processed: " << count << endl;
+}
+
 
 int main() {
-    candles_test();
+    for (string symbol : config.get_csv_strings("symbols_list")) {
+        candles_volume_report(symbol);
+        cout << "----------------------------------------" << endl;
+    }
     return 0;
 }
