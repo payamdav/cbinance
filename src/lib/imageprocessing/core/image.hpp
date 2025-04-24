@@ -12,6 +12,13 @@ namespace img {
 
 const double eps = 1e-8;
 
+enum class VolumeType {
+    NONE,
+    ALL,
+    BUY,
+    SELL
+};
+
 
 class Image {
     public:
@@ -31,20 +38,35 @@ class Image {
 
         Image * normalize(double min=0, double max=1);
         Image * clip_intensity(double min=0, double max=1);
+        Image * zero_out(double less_than=0);
 
         Image * add(double value, bool nonzero=false);
+        Image * add(const Image& img, bool nonzero=false);
         Image * multiply(double value, bool nonzero=false);
 
         // operator overload () and = for reading and writing
         double& operator()(int x, int y);
         const double& operator()(int x, int y) const;
+        const double& operator()(int x, int y, double default_value) const;
 
         Image * draw_line(int x1, int y1, int x2, int y2, double intensity=1);
         Image * draw_horizontal_line(int y, double intensity=1);
         Image * draw_vertical_line(int x, double intensity=1);
+        
+        // Image factories
+        static Image * ones(int w, int h);
+        // Image factories for image filters
+        static Image * gaussian_filter(int w, int h, double sigma=1);
+        static Image * box_filter(int w, int h);
+        
+        // Load trades data
+        static Image * load_trades(const string& symbol, size_t ts1, size_t ts2, size_t t_interval=60000, VolumeType volume_type=VolumeType::ALL);
 
-        static Image * load_trades_no_volume(const string& symbol, size_t ts1, size_t ts2, size_t t_interval=60000);
-        static Image * load_trades(const string& symbol, size_t ts1, size_t ts2, size_t t_interval=60000);
+        // Matrix Operations
+        Image * transpose();
+        Image * scale(double xfactor, double yfactor);
+        Image * convolve(const Image& kernel);
+        Image * convolve_valid(const Image& kernel);
 
 };
 

@@ -112,3 +112,67 @@ ZigZag_TL * ZigZag_TL::save(const std::string & filename) {
     return this;
 }
 
+ZigZagStat ZigZag_TL::stat(size_t ts1, size_t ts2)  {
+    size_t sum_l_h = 0;
+    size_t sum_t_h = 0;
+    size_t count_h = 0;
+    size_t sum_l_l = 0;
+    size_t sum_t_l = 0;
+    size_t count_l = 0;
+    size_t sum_l = 0;
+    size_t sum_t = 0;
+    size_t count = 0;
+
+    for (int i = 1; i < size(); i++) {
+        Zig_TL & zig = at(i);
+        if (zig.t >= ts1 && zig.t <= ts2) {
+            Zig_TL & prev = at(i - 1);
+            count++;
+            sum_t += (zig.t - prev.t);
+            if (zig.h) {
+                sum_l_h += (zig.l - prev.l);
+                sum_t_h += (zig.t - prev.t);
+                count_h++;
+                sum_l += (zig.l - prev.l);
+            }
+            else {
+                sum_l_l += (prev.l - zig.l);
+                sum_t_l += (zig.t - prev.t);
+                count_l++;
+                sum_l += (prev.l - zig.l);
+            }
+        }
+    }
+
+    ZigZagStat stat;
+    stat.count = count;
+    stat.count_h = count_h;
+    stat.count_l = count_l;
+    if (count_h > 0) {
+        stat.avg_l_h = sum_l_h / count_h;
+        stat.avg_t_h = sum_t_h / count_h;
+    }
+    if (count_l > 0) {
+        stat.avg_l_l = sum_l_l / count_l;
+        stat.avg_t_l = sum_t_l / count_l;
+    }
+    if (count > 0) {
+        stat.avg_l = sum_l / count;
+        stat.avg_t = sum_t / count;
+    }
+    
+    return stat;
+}
+
+ostream & operator<<(ostream &os, const ZigZagStat & stat) {
+    os << "count: " << stat.count << endl;
+    os << "count_h: " << stat.count_h << endl;
+    os << "count_l: " << stat.count_l << endl;
+    os << "avg_l: " << stat.avg_l << endl;
+    os << "avg_t: " << stat.avg_t << endl;
+    os << "avg_l_h: " << stat.avg_l_h << endl;
+    os << "avg_t_h: " << stat.avg_t_h << endl;
+    os << "avg_l_l: " << stat.avg_l_l << endl;
+    os << "avg_t_l: " << stat.avg_t_l << endl;
+    return os;
+}

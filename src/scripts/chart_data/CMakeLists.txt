@@ -6,3 +6,6 @@ target_link_libraries(trade_obl_avg_prepare trade config utils obl_instant zigza
 
 add_executable(trade_obl_snapshot_prepare trade_obl_snapshot_prepare.cpp)
 target_link_libraries(trade_obl_snapshot_prepare trade config utils obl_instant zigzag)
+
+add_executable(trade_candleanal trade_candleanal.cpp)
+target_link_libraries(trade_candleanal trade config utils zigzag candle_anal)

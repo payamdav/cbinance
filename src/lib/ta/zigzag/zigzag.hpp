@@ -2,6 +2,7 @@
 #include <vector>
 #include "../../trade/tl.hpp"
 #include <string>
+#include <iostream>
 
 
 using namespace std;
@@ -14,6 +15,21 @@ class Zig_TL {
 
         Zig_TL(size_t t = 0, size_t l = 0, bool h = false);
 };
+
+struct ZigZagStat {
+    int count = 0;
+    int count_h = 0;
+    int count_l = 0;
+    int avg_l = 0;
+    int avg_t = 0;
+    int avg_l_h = 0;
+    int avg_t_h = 0;
+    int avg_l_l = 0;
+    int avg_t_l = 0;
+};
+
+ostream & operator<<(ostream &os, const ZigZagStat & stat);
+
 
 class ZigZag_TL : public std::vector<Zig_TL> {
     private:
@@ -32,4 +48,6 @@ class ZigZag_TL : public std::vector<Zig_TL> {
         ZigZag_TL * push(const TLS &);
         ZigZag_TL * reset();
         ZigZag_TL * save(const std::string & filename);
+
+        ZigZagStat stat(size_t ts1=0, size_t ts2=2000000000000);
 };

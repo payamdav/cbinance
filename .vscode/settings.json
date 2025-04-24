@@ -72,6 +72,7 @@
         "io_context": "cpp",
         "netfwd": "cpp",
         "timer": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "ranges": "cpp"
     }
 }

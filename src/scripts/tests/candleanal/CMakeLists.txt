@@ -1,0 +1,2 @@
+add_executable(candleanal_test candleanal_test.cpp)
+target_link_libraries(candleanal_test utils config candle_anal)
