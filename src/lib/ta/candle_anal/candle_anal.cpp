@@ -79,12 +79,16 @@ vector<VolumeArea> CandleAnal::volume_areas(int period, int maxlevel) {
     double avg_volume = average_volume();
     vector<double> & conv = volume_convolution(period, maxlevel);
 
+    size_t count = 0;
+
     while(true) {
         auto it_max = max_element(conv.begin(), conv.end());
         double max_conv = *it_max;
         size_t max_index = distance(conv.begin(), it_max);
         if (max_conv < avg_volume) break;
         VolumeArea area;
+        area.rank = count++;
+        area.max_level = maxlevel;
         area.ts_center = candles->at(max_index).ts;
         area.level_center = vwl[max_index];
         area.avg_volume = 0;
@@ -122,3 +126,22 @@ vector<VolumeArea> CandleAnal::volume_areas(int period, int maxlevel) {
 
     return areas;
 }
+
+void CandleAnal::save_volume_areas(const vector<VolumeArea> & areas, const string & filename) {
+    ofstream file(filename, ios::binary);
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << filename << endl;
+        return;
+    }
+    for (const auto & area : areas) {
+        file.write(reinterpret_cast<const char *>(&area.rank), sizeof(size_t));
+        file.write(reinterpret_cast<const char *>(&area.ts_center), sizeof(size_t));
+        file.write(reinterpret_cast<const char *>(&area.ts_start), sizeof(size_t));
+        file.write(reinterpret_cast<const char *>(&area.ts_end), sizeof(size_t));
+        file.write(reinterpret_cast<const char *>(&area.level_center), sizeof(size_t));
+        file.write(reinterpret_cast<const char *>(&area.max_level), sizeof(size_t));
+        file.write(reinterpret_cast<const char *>(&area.avg_volume), sizeof(double));
+    }
+    file.close();
+}
+

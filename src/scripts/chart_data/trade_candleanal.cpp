@@ -31,12 +31,13 @@ void create_chart_data_files_for_trade_candleanal(string symbol, string dt1, str
 
     cout << "Average candle size: " << avg_candle_size << endl; // Print the average candle size
 
-    auto va = candleAnal.volume_areas(61, 100); // Get the volume areas
+    auto va = candleAnal.volume_areas(121, 100); // Get the volume areas
     cout << "Volume areas: " << endl; // Print the volume areas
     for (const auto & area : va) {
         cout << "Area: " << area.ts_start << " " << area.ts_end << " " << area.level_center << " " << area.avg_volume << endl; // Print each volume area
     }
     cout << "Volume areas size: " << va.size() << endl; // Print the size of the volume areas
+    CandleAnal::save_volume_areas(va, "/home/payam/data/files/volume_areas.bin"); // Save the volume areas to a binary file
 
 
     ZigZag_TL zz1(avg_candle_size);

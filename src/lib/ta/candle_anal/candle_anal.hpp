@@ -8,10 +8,12 @@
 using namespace std;
 
 struct VolumeArea {
+    size_t rank;
     size_t ts_center;
     size_t ts_start;
     size_t ts_end;
     size_t level_center;
+    size_t max_level;
     double avg_volume;
 };
 
@@ -29,5 +31,7 @@ public:
     vector<double> & volume_convolution(int period, int maxlevel=10000);
     double average_volume();
     vector<VolumeArea> volume_areas(int period, int maxlevel=10000);
+    static void save_volume_areas(const vector<VolumeArea> & areas, const string & filename);
+    
 
 };
