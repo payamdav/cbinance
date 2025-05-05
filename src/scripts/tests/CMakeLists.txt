@@ -6,3 +6,4 @@ target_link_libraries(candles_test binance_candles utils pip_levelizer vols conf
 
 add_subdirectory(imagep)
 add_subdirectory(candleanal)
+add_subdirectory(simulator)

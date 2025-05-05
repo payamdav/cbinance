@@ -29,6 +29,8 @@ add_subdirectory(src/lib/ob/obl_ext/obl_instant) # Must be after obl, as it link
 add_subdirectory(src/lib/ob/obl_ext/obl_sum_up_sum_prev) # Must be after obl, as it links to it
 add_subdirectory(src/lib/imageprocessing)
 add_subdirectory(src/lib/ta/candle_anal)
+add_subdirectory(src/lib/market)
+add_subdirectory(src/lib/simulator)
 # add_subdirectory(src/lib/ta/volume_profiler)
 add_subdirectory(src/scripts/depth)
 add_subdirectory(src/scripts/trades)
