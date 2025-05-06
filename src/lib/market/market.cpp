@@ -7,6 +7,7 @@ using namespace std;
 void LOrder::finalize() {
     duration = exit_ts - entry_ts;
     profit = (exit_price - entry_price) * (direction == OrderDirection::LONG ? 1 : -1);
+    net_profit = profit - commision;
 }
 
 void LOrder::finalize(size_t exit_ts, size_t exit_price, ExitStatus exit_status) {
@@ -16,8 +17,26 @@ void LOrder::finalize(size_t exit_ts, size_t exit_price, ExitStatus exit_status)
     finalize();
 }
 
+ostream & operator<<(ostream &os, const LOrder &order) {
+    os << "Order ID: " << order.id << ", Request TS: " << order.request_ts
+       << ", Entry TS: " << order.entry_ts << ", Exit TS: " << order.exit_ts
+       << ", Exit Status: " << static_cast<int>(order.exit_status)
+       << ", Direction: " << static_cast<int>(order.direction)
+       << ", Entry Price: " << order.entry_price
+       << ", Exit Price: " << order.exit_price
+       << ", SL: " << order.sl
+       << ", TP: " << order.tp
+       << ", Profit: " << order.profit
+       << ", Duration: " << order.duration;
+    return os;
+}
+
 LMarket::LMarket(const string &name) : name(name) {
     cout << "Market created: " << name << endl;
+}
+
+void LMarket::set_commision(long commision) {
+    this->commision = commision;
 }
 
 void LMarket::push(size_t ts, size_t price) {
@@ -87,21 +106,23 @@ void LMarket::handle_active_orders() {
 }
 
 
-LOrder & LMarket::market_order(OrderDirection direction) {
-    LOrder &order = active_orders.emplace_back();
-    order.id = ++last_order_id;
-    order.direction = direction;
-    order.request_ts = last_ts;
-    order.entry_ts = last_ts;
-    order.entry_price = last_price;
+LOrder * LMarket::market_order(OrderDirection direction) {
+    LOrder *order = &active_orders.emplace_back();
+    order->id = ++last_order_id;
+    order->direction = direction;
+    order->request_ts = last_ts;
+    order->entry_ts = last_ts;
+    order->entry_price = last_price;
+    order->commision = commision;
     return order;
 }
 
-LOrder & LMarket::pending_order(OrderDirection direction) {
-    LOrder &order = pending_orders.emplace_back();
-    order.id = ++last_order_id;
-    order.direction = direction;
-    order.request_ts = last_ts;
+LOrder * LMarket::pending_order(OrderDirection direction) {
+    LOrder *order = &pending_orders.emplace_back();
+    order->id = ++last_order_id;
+    order->direction = direction;
+    order->request_ts = last_ts;
+    order->commision = commision;
     return order;
 }
 
@@ -128,24 +149,49 @@ LMarketReport LMarket::report() const {
     report.completed_orders = completed_orders.size();
     report.active_orders = active_orders.size();
     report.pending_orders = pending_orders.size();
-    
+
     for (const auto &order : completed_orders) {
+        if (order.exit_status == ExitStatus::SL) {
+            report.sl++;
+        } else if (order.exit_status == ExitStatus::TP) {
+            report.tp++;
+        } else if (order.exit_status == ExitStatus::Cancel) {
+            report.cancel++;
+        }
+        if (order.net_profit > 0) {
+            report.success++;
+            report.avg_duration_success += order.duration;
+        } else {
+            report.failed++;
+            report.avg_duration_failed += order.duration;
+        }
         report.total_profit += order.profit;
-        report.total_duration += order.duration;
+        report.total_net_profit += order.net_profit;
+        report.avg_duration += order.duration;
+
     }
-    
+
+    report.win_rate = (report.success + report.failed) > 0 ? (static_cast<double>(report.success) / (report.success + report.failed)) * 100 : 0;
+    report.avg_duration = report.completed_orders > 0 ? report.avg_duration / report.completed_orders : 0;
+    report.avg_duration_success = report.success > 0 ? report.avg_duration_success / report.success : 0;
+    report.avg_duration_failed = report.failed > 0 ? report.avg_duration_failed / report.failed : 0;
+
     return report;
 }
 
 
-void LMarketReport::print() const {
-    cout << "Market Report:" << endl;
-    cout << "Total Orders: " << total_orders << endl;
-    cout << "Completed Orders: " << completed_orders << endl;
-    cout << "Active Orders: " << active_orders << endl;
-    cout << "Pending Orders: " << pending_orders << endl;
-    cout << "Total Profit: " << total_profit << " pips" << endl;
-    cout << "Total Duration: " << total_duration << " seconds" << endl;
+ostream & operator<<(ostream &os, const LMarketReport &report) {
+    os << "Total Orders: " << report.total_orders << ", Completed Orders: " << report.completed_orders
+       << ", Active Orders: " << report.active_orders << ", Pending Orders: " << report.pending_orders
+       << ", Success: " << report.success << ", Failed: " << report.failed
+       << ", SL: " << report.sl << ", TP: " << report.tp
+       << ", Cancel: " << report.cancel
+       << ", Win Rate: " << report.win_rate << "%"
+       << ", Avg Duration: " << report.avg_duration
+       << ", Avg Duration Success: " << report.avg_duration_success
+       << ", Avg Duration Failed: " << report.avg_duration_failed
+       << ", Total Profit: " << report.total_profit
+       << ", Total Net Profit: " << report.total_net_profit;
+    return os;
 }
-
 
